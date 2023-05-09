@@ -1,0 +1,5 @@
+This is a simple SunSpec logger, printing out measured watts from SunSpec modul 103..
+
+Use
+
+    ./bin/garmin-babel -h
