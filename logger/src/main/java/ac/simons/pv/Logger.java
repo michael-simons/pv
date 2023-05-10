@@ -17,10 +17,15 @@ package ac.simons.pv;
 
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -62,6 +67,19 @@ public final class Logger implements Runnable {
 	@Spec
 	private CommandSpec commandSpec;
 
+	private final ZoneId tz = ZoneId.of("Europe/Berlin");
+
+	private final DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+		.append(DateTimeFormatter.ISO_LOCAL_DATE)
+		.appendLiteral('T')
+		.appendValue(ChronoField.HOUR_OF_DAY, 2)
+		.appendLiteral(':')
+		.appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+		.optionalStart()
+		.appendLiteral(':')
+		.appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+		.toFormatter(Locale.ENGLISH);
+
 	/**
 	 * Just print the error message, not the whole stack
 	 */
@@ -96,14 +114,18 @@ public final class Logger implements Runnable {
 		var rateInSeconds = rate.toSeconds();
 
 		executor.scheduleAtFixedRate(() -> {
+			LocalDateTime measuredOn = null;
+			double power = 0.0;
 			try {
 				fetcher.refresh();
-				System.out.printf(Locale.ENGLISH, "%s;%f%n", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), fetcher.model_103.getWatts());
+				measuredOn = LocalDateTime.ofInstant(Instant.ofEpochMilli(fetcher.getCurrentDataTimestamp()), tz);
+				power = fetcher.model_103.getWatts();
 			} catch (MissingMandatoryFieldException e) {
 				throw new UncheckedIOException(e);
 			} catch (ModbusException e) {
 				System.err.println("Could not fetch data " + e.getMessage());
 			}
+			System.out.printf(Locale.ENGLISH, "%s;%.3f%n", dateTimeFormatter.format(Optional.ofNullable(measuredOn).orElseGet(LocalDateTime::now)), power);
 		}, 0, rateInSeconds, TimeUnit.SECONDS);
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
