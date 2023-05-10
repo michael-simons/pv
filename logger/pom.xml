@@ -67,7 +67,9 @@
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.8.4</maven.version>
 		<modbus-energy-parser.version>0.1-SNAPSHOT</modbus-energy-parser.version>
+		<name-of-executable>log-power-output</name-of-executable>
 		<name-of-main-class>ac.simons.pv.Logger</name-of-main-class>
+		<native.maven.plugin.version>0.9.21</native.maven.plugin.version>
 		<picocli.version>4.7.0</picocli.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -404,7 +406,7 @@
 					<programs>
 						<program>
 							<mainClass>${name-of-main-class}</mainClass>
-							<id>log-power-output</id>
+							<id>${name-of-executable}</id>
 						</program>
 					</programs>
 				</configuration>
@@ -444,4 +446,42 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>native</id>
+			<activation>
+				<property>
+					<name>native</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.graalvm.buildtools</groupId>
+						<artifactId>native-maven-plugin</artifactId>
+						<version>${native.maven.plugin.version}</version>
+						<extensions>true</extensions>
+						<configuration>
+							<requiredVersion>22.3</requiredVersion>
+							<mainClass>${name-of-main-class}</mainClass>
+							<imageName>${name-of-executable}</imageName>
+							<buildArgs>
+								<arg>--no-fallback</arg>
+							</buildArgs>
+						</configuration>
+						<executions>
+							<execution>
+								<id>create-native-image</id>
+								<goals>
+									<goal>compile-no-fork</goal>
+								</goals>
+								<phase>package</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
