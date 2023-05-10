@@ -4,7 +4,7 @@ SET TimeZone='Europe/Berlin';
 WITH input AS (
     SELECT date_trunc('minute', time_bucket(INTERVAL '15 Minutes', measured_on::timestamptz)) AS ts,
            avg(power) AS power
-    FROM 'logger.csv'
+    FROM read_csv_auto('logger.csv', header=false, names=['measured_on', 'power'])
     GROUP BY ts
 )
 INSERT INTO production (measured_on, power)

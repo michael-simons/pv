@@ -88,7 +88,6 @@ public final class Logger implements Runnable {
 		var executor = Executors.newSingleThreadScheduledExecutor();
 		try (SunSpecModbusDataReader dataReader = getDataReader()) {
 			var fetcher = new SunSpecFetcher(dataReader).useModel(103);
-			System.out.println("measured_on;power");
 			executor.scheduleAtFixedRate(() -> {
 				try {
 					fetcher.refresh();
