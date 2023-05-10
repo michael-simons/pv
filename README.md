@@ -57,6 +57,18 @@ Run the power logger with
 
 Again, this might damage your inverter, burn down the house and what not. Use at your own risk.
 
+On macOS, you can use `launchctl` to run this program as a service. See below for logfile rotation.
+
+```bash
+launchctl submit -l log-power-output -o `pwd`/logger.csv -- `pwd`/logger/target/log-power-output -a your.address 
+```
+
+Remove again with
+
+```bash
+launchctl remove log-power-output
+```
+
 ### Database
 
 #### Import from the loggers output
