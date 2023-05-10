@@ -16,8 +16,10 @@
 package ac.simons.pv;
 
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,9 @@ public final class Logger implements Runnable {
 	@Option(names = {"-a", "--address"}, description = "The address of the SunSpec device.", required = true)
 	private String address = null;
 
+	@Option(names = {"-r", "--rate"}, description = "The rate at which measurements should be taken")
+	private Duration rate = Duration.of(1, ChronoUnit.MINUTES);
+
 	@Spec
 	private CommandSpec commandSpec;
 
@@ -86,19 +91,30 @@ public final class Logger implements Runnable {
 	public void run() {
 
 		var executor = Executors.newSingleThreadScheduledExecutor();
-		try (SunSpecModbusDataReader dataReader = getDataReader()) {
-			var fetcher = new SunSpecFetcher(dataReader).useModel(103);
-			executor.scheduleAtFixedRate(() -> {
-				try {
-					fetcher.refresh();
-					System.out.printf(Locale.ENGLISH, "%s;%f%n", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), fetcher.model_103.getWatts());
-				} catch (MissingMandatoryFieldException e) {
-					throw new UncheckedIOException(e);
-				} catch (ModbusException e) {
-					System.err.println("Could not fetch data " + e.getMessage());
+		var dataReader = getDataReader();
+		var fetcher = new SunSpecFetcher(dataReader).useModel(103);
+		var rateInSeconds = rate.toSeconds();
+
+		executor.scheduleAtFixedRate(() -> {
+			try {
+				fetcher.refresh();
+				System.out.printf(Locale.ENGLISH, "%s;%f%n", LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), fetcher.model_103.getWatts());
+			} catch (MissingMandatoryFieldException e) {
+				throw new UncheckedIOException(e);
+			} catch (ModbusException e) {
+				System.err.println("Could not fetch data " + e.getMessage());
+			}
+		}, 0, rateInSeconds, TimeUnit.SECONDS);
+
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			executor.shutdown();
+			try {
+				if (executor.awaitTermination(rateInSeconds * 2, TimeUnit.SECONDS)) {
+					dataReader.close();
 				}
-			}, 0, 60, TimeUnit.SECONDS);
-		}
+			} catch (InterruptedException ignored) {
+			}
+		}));
 	}
 
 	private SunSpecModbusDataReader getDataReader() {
