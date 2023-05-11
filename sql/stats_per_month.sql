@@ -3,4 +3,3 @@ SELECT date_trunc('month', measured_on) AS Month,
 FROM production
 GROUP BY rollup(Month)
 ORDER BY Month ASC NULLS LAST;
-
