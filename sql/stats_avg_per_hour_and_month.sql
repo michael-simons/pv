@@ -4,6 +4,7 @@ WITH production_per_month_and_hour AS (
            avg(power) / 1000                         AS Energy
       FROM production
      GROUP BY date_trunc('hour', measured_on)
+     ORDER BY Hour
 )
 SELECT *
 FROM production_per_month_and_hour

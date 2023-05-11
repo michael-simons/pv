@@ -135,13 +135,17 @@ duckdb --readonly pv.db < sql/stats_per_day.sql
 duckdb --readonly pv.db < sql/stats_peaks.sql
 ```
 
-##### Per hour and month
+##### Average per hour and month
 
 _Needs DuckDB Nightly (> v0.7.2-dev2706 43a97f9078)_
 
 ```bash
-./duckdb --readonly pv.db < sql/stats_per_hour_and_month.sql
+duckdb --readonly pv.db < sql/stats_avg_per_hour_and_month.sql
 ```
+
+The `PIVOT` support is fantastic:
+
+![stats_avg_per_hour_and_month](media/stats_avg_per_hour_and_month.png)
 
 ## Managing log files
 
