@@ -135,6 +135,22 @@ duckdb --readonly pv.db < sql/stats_per_day.sql
 duckdb --readonly pv.db < sql/stats_peaks.sql
 ```
 
+##### Average per month
+
+```bash
+duckdb --readonly pv.db < sql/stats_avg_per_month.sql
+```
+
+Should look something like this, which I totally love:
+
+![stats_avg_per_month_example](media/stats_avg_per_month.png)
+
+##### Average per hour
+
+```bash
+duckdb --readonly pv.db < sql/stats_avg_per_hour.sql
+```
+
 ##### Average per hour and month
 
 _Needs DuckDB Nightly (> v0.7.2-dev2706 43a97f9078)_
