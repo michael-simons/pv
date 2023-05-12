@@ -21,16 +21,30 @@ mvn -f logger/pom.xml clean package
 Right now, the SQL scripts work on a single DuckDB table:
 
 ```bash
-duckdb pv.db < sql/schema.sql
+duckdb pv.db < sql/V010__Create_production.sql
 ```
 
-Some statistics will look odd without data for all quarterly hours until now:
+All statistics work with views:
+
+```bash
+find sql -iname "R__*.sql" -and -not -iname "R__Create_view_average_production_per_month_and_hour.sql" -print0 |\
+  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW'")|\
+  duckdb pv.db
+```
+
+The average production per hour and month needs a nightly DuckDB build (>= v0.7.2-dev2706 43a97f9078).
+
+```bash
+duckdb pv.db < sql/R__Create_view_average_production_per_month_and_hour.sql
+```
+
+Some statistics will look odd without data for all quarterly hours and I have created a script that loads initial data:
 
 ```bash
 java sql/initial_data.java | duckdb pv.db "INSERT INTO production SELECT ts::timestamptz, power FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
 ```
 
-Values are stored per quarterly hour, as local date times (local timezone is assumed). For dealing with specifics to your area, i.e. changes during summer / winter time observations, scripts needs adjustement. 
+Values are stored per quarterly hour, as local date times (local timezone is assumed). For dealing with specifics to your area, i.e. changes during summer / winter time observations, scripts needs adjustment. 
 
 `production` looks like this:
 
@@ -114,31 +128,31 @@ DELETE FROM production WHERE date_trunc('day', measured_on) < '2023-04-20' AND f
 ##### Overalls
 
 ```bash
-duckdb --readonly pv.db < sql/stats_overall.sql
+duckdb --readonly pv.db "SELECT * FROM overall_production"
 ```
 
 ##### Per Month
 
 ```bash
-duckdb --readonly pv.db < sql/stats_per_month.sql
+duckdb --readonly pv.db "SELECT * FROM production_per_month"
 ```
 
 ##### Per day
 
 ```bash
-duckdb --readonly pv.db < sql/stats_per_day.sql
+duckdb --readonly pv.db "SELECT * FROM production_per_day"
 ```
 
 ##### Peaks
 
 ```bash
-duckdb --readonly pv.db < sql/stats_peaks.sql
+duckdb --readonly pv.db "SELECT * FROM peaks"
 ```
 
 ##### Average per month
 
 ```bash
-duckdb --readonly pv.db < sql/stats_avg_per_month.sql
+duckdb --readonly pv.db "SELECT * FROM average_production_per_month"
 ```
 
 Should look something like this, which I totally love:
@@ -148,15 +162,13 @@ Should look something like this, which I totally love:
 ##### Average per hour
 
 ```bash
-duckdb --readonly pv.db < sql/stats_avg_per_hour.sql
+duckdb --readonly pv.db "SELECT * FROM average_production_per_hour"
 ```
 
 ##### Average per hour and month
 
-_Needs DuckDB Nightly (> v0.7.2-dev2706 43a97f9078)_
-
 ```bash
-duckdb --readonly pv.db < sql/stats_avg_per_hour_and_month.sql
+duckdb --readonly pv.db "SELECT * FROM average_production_per_month_and_hour"
 ```
 
 The `PIVOT` support is fantastic:
