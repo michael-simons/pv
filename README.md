@@ -18,13 +18,13 @@ mvn -f logger/pom.xml clean package
 
 [DuckDB](https://duckdb.org) >= 0.7.1, Java 17 for running `initial_data.java`.
 
-Right now, the SQL scripts work on a single DuckDB table:
+All schema scripts starts with an uppercase `V` followed by an incrementing number.
 
 ```bash
-duckdb pv.db < sql/V010__Create_production.sql
+find sql -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
 ```
 
-All statistics work with views:
+All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
 
 ```bash
 find sql -iname "R__*.sql" -and -not -iname "R__Create_view_average_production_per_month_and_hour.sql" -print0 |\
