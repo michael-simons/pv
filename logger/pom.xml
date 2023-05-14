@@ -66,7 +66,7 @@
 		<maven.compiler.parameters>true</maven.compiler.parameters>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<maven.version>3.8.4</maven.version>
-		<modbus-energy-parser.version>0.1-SNAPSHOT</modbus-energy-parser.version>
+		<modbus-energy-parser.version>0.0.1</modbus-energy-parser.version>
 		<name-of-executable>log-power-output</name-of-executable>
 		<name-of-main-class>ac.simons.pv.Logger</name-of-main-class>
 		<native.maven.plugin.version>0.9.21</native.maven.plugin.version>

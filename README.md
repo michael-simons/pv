@@ -6,7 +6,7 @@
 
 ### For the power logger
 
-A snapshot build of the [Energy systems reading toolkit](https://energy.basjes.nl) is required for the logger to be compiled.
+The logger is based on the [Energy systems reading toolkit](https://energy.basjes.nl). Thanks a ton for your work, [Niels Basjes](https://mastodon.basjes.nl/@niels). 
 
 Build the power logger with
 
