@@ -27,15 +27,23 @@ find sql -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
 All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
 
 ```bash
-find sql -iname "R__*.sql" -and -not -iname "R__Create_view_average_production_per_month_and_hour.sql" -print0 |\
+find sql -iname "R__*.sql" -and -not -iname "R__*\[requires_nightly\].sql" -print0 |\
   (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW'")|\
   duckdb pv.db
 ```
 
-The average production per hour and month needs a nightly DuckDB build (>= v0.7.2-dev2706 43a97f9078).
+Some views require a nightly DuckDB build (>= v0.7.2-dev2706 43a97f9078).
 
 ```bash
-duckdb pv.db < sql/R__Create_view_average_production_per_month_and_hour.sql
+find sql -iname "R__*\[requires_nightly\].sql" -print0 |\
+  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW'")|\
+  duckdb pv.db
+```
+
+There is some inventory data present, mostly my installed peak power and Germany's vat history:
+
+```bash
+duckdb pv.db < sql/Inventory_data.sql
 ```
 
 Some statistics will look odd without data for all quarterly hours and I have created a script that loads initial data:
