@@ -12,8 +12,8 @@ CREATE OR REPLACE VIEW buying_prices AS (
     SELECT greatest(b.valid_from, vat.valid_from) AS valid_from,
            least(b.valid_until, vat.valid_until)  AS valid_until,
            b.value                                AS net,
-           b.value - coalesce(lag(b.value) OVER (ORDER BY greatest(b.valid_from, vat.valid_from)), b.value)
-                                                  AS delta,
+           round((b.value - coalesce(lag(b.value) OVER (ORDER BY greatest(b.valid_from, vat.valid_from)), b.value)) / coalesce(lag(b.value) OVER (ORDER BY greatest(b.valid_from, vat.valid_from)), b.value), 4)
+                                                  AS change,
            vat.value                              AS tax,
            round(b.value * (vat.value + 1.0), 2)  AS gross
     FROM buying_prices b
