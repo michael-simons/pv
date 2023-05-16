@@ -29,6 +29,8 @@ This will clear the output from the notebook file:
 jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
 ```
 
+There's also an online version available at [mybinder.org](https://mybinder.org/v2/gh/michael-simons/pv/HEAD?labpath=notebooks%2Fpv_at_simons.ac.ipynb).
+
 ### Database
 
 [DuckDB](https://duckdb.org) >= 0.7.1, Java 17 for running `initial_data.java`.
