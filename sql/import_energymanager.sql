@@ -9,4 +9,9 @@ WITH input AS (
 INSERT INTO production (measured_on, power)
 SELECT ts, power
 FROM input
-ON CONFLICT (measured_on) DO UPDATE SET power = excluded.power WHERE power = 0.0;
+ON CONFLICT (measured_on) DO UPDATE
+SET power = CASE
+  WHEN power = 0 THEN excluded.power
+  WHEN power < excluded.power THEN (power + excluded.power) / 2
+  ELSE power END
+;
