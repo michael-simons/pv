@@ -14,6 +14,21 @@ Build the power logger with
 mvn -f logger/pom.xml clean package
 ```
 
+### Using the provided notebook with my latest published data
+
+You need to install the following Python dependencies. I used `pip3` which happened to work on a recent macOS machine:
+
+```bash
+pip3 install notebook pandas matplotlib numpy duckdb
+jupyter notebook notebooks/pv_at_simons.ac.ipynb
+```
+
+This will clear the output from the notebook file:
+
+```bash
+jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
+```
+
 ### Database
 
 [DuckDB](https://duckdb.org) >= 0.7.1, Java 17 for running `initial_data.java`.
@@ -46,7 +61,7 @@ There is some inventory data present, mostly my installed peak power and Germany
 duckdb pv.db < sql/Inventory_data.sql
 ```
 
-Some statistics will look odd without data for all quarterly hours and I have created a script that loads initial data:
+Some statistics will look odd without data for all quarterly hours, and I have created a script that loads initial data:
 
 ```bash
 java sql/initial_data.java | duckdb pv.db "INSERT INTO production SELECT ts::timestamptz, power FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
@@ -129,6 +144,20 @@ For example:
 
 ```sql
 DELETE FROM production WHERE date_trunc('day', measured_on) < '2023-04-20' AND false;
+```
+
+#### Creating backups
+
+The whole database can be exported either as CSV files like this
+
+```sql
+EXPORT DATABASE 'target_folder';
+```
+
+Or if you prefer [Parquet](https://parquet.apache.org), use the following:
+
+```sql
+EXPORT DATABASE 'target_folder' (FORMAT PARQUET, COMPRESSION ZSTD);
 ```
 
 #### Statistics
