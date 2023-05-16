@@ -9,10 +9,10 @@ CREATE OR REPLACE VIEW average_production_per_hour AS (
         SELECT max(Wh) AS value FROM hourly_averages
     )
     SELECT hour,
-           lpad(round(Wh / 1000, 2), 8, ' ') || ' ' ||
+           round(Wh / 1000, 2) AS kWh,
            CASE
              WHEN hour IS NULL THEN ''
              ELSE bar(floor(Wh), 0, floor(max_Wh.value))
-           END AS 'Average energy produced (kWh)'
+           END AS 'Average energy produced'
     FROM hourly_averages, max_Wh
 );

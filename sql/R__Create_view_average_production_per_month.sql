@@ -14,11 +14,11 @@ CREATE OR REPLACE VIEW average_production_per_month AS (
         SELECT max(kWh) AS value FROM monthly_averages
     )
     SELECT strftime(make_date(0, Month, 1), '%B') AS Month,
-           lpad(kWh,8, ' ') || ' ' ||
+           kWh,
            CASE
              WHEN monthly_averages.Month IS NULL THEN ''
              ELSE bar(floor(kWh), 0, floor(max_kWH.value))
-           END AS 'Average energy produced (kWh)'
+           END AS 'Average energy produced'
     FROM monthly_averages, max_kWH
     ORDER BY monthly_averages.Month ASC NULLS LAST
 );
