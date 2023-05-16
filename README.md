@@ -14,24 +14,7 @@ Build the power logger with
 mvn -f logger/pom.xml clean package
 ```
 
-### Using the provided notebook with my latest published data
-
-You need to install the following Python dependencies. I used `pip3` which happened to work on a recent macOS machine:
-
-```bash
-pip3 install notebook pandas matplotlib numpy duckdb
-jupyter notebook notebooks/pv_at_simons.ac.ipynb
-```
-
-This will clear the output from the notebook file:
-
-```bash
-jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
-```
-
-There's also an online version available at [mybinder.org](https://mybinder.org/v2/gh/michael-simons/pv/HEAD?labpath=notebooks%2Fpv_at_simons.ac.ipynb).
-
-### Database
+### For the database
 
 [DuckDB](https://duckdb.org) >= 0.7.1, Java 17 for running `initial_data.java`.
 
@@ -84,11 +67,19 @@ D show production;
 └─────────────┴──────────────┴─────────┴─────────┴─────────┴───────┘
 ```
 
+### For the Jupyter notebook
+
+I have added a `requirements.txt` usable with `pip` like this:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Usage
 
 ### Logger
 
-Run the power logger with
+Run the power logger with:
 
 ```bash
 ./logger/target/assembly/bin/log-power-output
@@ -107,6 +98,22 @@ Remove again with
 ```bash
 launchctl remove log-power-output
 ```
+
+### Jupyter Notebook
+
+Run the notebook with:
+
+```bash
+jupyter notebook notebooks/pv_at_simons.ac.ipynb
+```
+
+Clear existing output with:
+
+```bash
+jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
+```
+
+There's also an online version available at [mybinder.org](https://mybinder.org/v2/gh/michael-simons/pv/HEAD?labpath=notebooks%2Fpv_at_simons.ac.ipynb).
 
 ### Database
 
