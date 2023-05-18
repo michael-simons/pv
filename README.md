@@ -27,16 +27,8 @@ find sql -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
 All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
 
 ```bash
-find sql -iname "R__*.sql" -and -not -iname "R__*\[requires_nightly\].sql" -print0 |\
-  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW'")|\
-  duckdb pv.db
-```
-
-Some views require a nightly DuckDB build (>= v0.7.2-dev2706 43a97f9078).
-
-```bash
-find sql -iname "R__*\[requires_nightly\].sql" -print0 |\
-  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW'")|\
+find sql -iname "R__*.sql" -print0 |\
+  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW' ORDER BY table_name ASC")|\
   duckdb pv.db
 ```
 
@@ -145,14 +137,6 @@ Concatenating several exports into one file via [xsv](https://github.com/BurntSu
 
 ```bash
 find . -type f -iname "chart*.csv" -print0 | xargs -r0 xsv cat -d ";" rows | xsv fmt -t ";" > meteocontrol.csv
-```
-
-#### Purging data
-
-For example:
-
-```sql
-DELETE FROM production WHERE date_trunc('day', measured_on) < '2023-04-20' AND false;
 ```
 
 #### Creating backups
