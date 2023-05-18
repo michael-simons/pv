@@ -105,7 +105,7 @@ Clear existing output with:
 jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
 ```
 
-There's also an online version available at [mybinder.org](https://mybinder.org/v2/gh/michael-simons/pv/HEAD?labpath=notebooks%2Fpv_at_simons.ac.ipynb).
+I have a rendered version with my current dataset at [simons.ac/pv](http://simons.ac/pv).
 
 ### Database
 
