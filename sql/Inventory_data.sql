@@ -1,7 +1,3 @@
-INSERT INTO domain_values (name, value, description)
-VALUES ('INSTALLED_PEAK_POWER', '10.53', 'The installed peak power in kilowatt (kW), usually dubbed kWp.')
-    ON CONFLICT (name) DO NOTHING;
-
 INSERT INTO applicable_vat_values(valid_from,valid_until, value) VALUES('1968-01-01', '1968-06-30', 0.1)  ON CONFLICT DO NOTHING;
 INSERT INTO applicable_vat_values(valid_from,valid_until, value) VALUES('1968-07-01', '1977-12-31', 0.11) ON CONFLICT DO NOTHING;
 INSERT INTO applicable_vat_values(valid_from,valid_until, value) VALUES('1978-01-01', '1979-06-30', 0.12) ON CONFLICT DO NOTHING;
