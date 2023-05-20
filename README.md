@@ -21,13 +21,13 @@ mvn -f logger/pom.xml clean package
 All schema scripts starts with an uppercase `V` followed by an incrementing number.
 
 ```bash
-find sql -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
+find sql/schema -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
 ```
 
 All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
 
 ```bash
-find sql -iname "R__*.sql" -print0 |\
+find sql/schema -iname "R__*.sql" -print0 |\
   (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW' ORDER BY table_name ASC")|\
   duckdb pv.db
 ```
@@ -35,13 +35,13 @@ find sql -iname "R__*.sql" -print0 |\
 There is some inventory data present, mostly my installed peak power and Germany's vat history:
 
 ```bash
-duckdb pv.db < sql/Inventory_data.sql
+duckdb pv.db < sql/data/Inventory_data.sql
 ```
 
 Some statistics will look odd without data for all quarterly hours, and I have created a script that loads initial data:
 
 ```bash
-java sql/initial_data.java | duckdb pv.db "INSERT INTO production SELECT ts::timestamptz, power FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
+java sql/import/initial_data.java | duckdb pv.db "INSERT INTO production SELECT ts::timestamptz, power FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
 ```
 
 Values are stored per quarterly hour, as local date times (local timezone is assumed). For dealing with specifics to your area, i.e. changes during summer / winter time observations, scripts needs adjustment. 
@@ -114,7 +114,7 @@ I have a rendered version with my current dataset at [simons.ac/pv](http://simon
 _Logger puts out 1 minute measurements in watt (W)._
 
 ```bash
-duckdb pv.db < sql/import_logger.sql
+duckdb pv.db < sql/logger.sql
 ```
 
 #### Import from energymanager.com
@@ -122,7 +122,7 @@ duckdb pv.db < sql/import_logger.sql
 _Export is 15 minutes average watt (W)_.
 
 ```bash
-duckdb pv.db < sql/import_energymanager.sql
+duckdb pv.db < sql/energymanager.sql
 ```
 
 #### Import from meteocontrol.com daily chart export
@@ -130,7 +130,7 @@ duckdb pv.db < sql/import_energymanager.sql
 _Export is 5 minutes average kilowatt (kW)._
 
 ```bash
-duckdb pv.db < sql/import_meteocontrol.sql
+duckdb pv.db < sql/meteocontrol.sql
 ```
 
 Concatenating several exports into one file via [xsv](https://github.com/BurntSushi/xsv):
@@ -232,5 +232,5 @@ There's a template configuration file for `logrotate` that might be helpful. Ass
 you can rotate everything with this command
 
 ```bash
-logrotate -f  etc/logrotate.conf 
+logrotate -f etc/logrotate.conf 
 ```

@@ -6,8 +6,9 @@ WITH input AS (
            avg(power) AS power
     FROM read_csv_auto('logger.csv', header=false, names=['measured_on', 'power'])
     GROUP BY ts
+    ORDER BY ts ASC
 )
 INSERT INTO production (measured_on, power)
 SELECT ts, power
 FROM input
-ON CONFLICT (measured_on) DO UPDATE SET power = excluded.power;
+ON CONFLICT (measured_on) DO UPDATE SET power = excluded.power WHERE power = 0.0;
