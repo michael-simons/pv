@@ -36,6 +36,7 @@ dependency-reduced-pom.xml
 .flattened-pom.xml
 
 /*.csv
-/pv.db*
+/pv.db
+/notebooks/pv.db
 
 .ipynb_checkpoints

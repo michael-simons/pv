@@ -99,6 +99,12 @@ Run the notebook with:
 jupyter notebook notebooks/pv_at_simons.ac.ipynb
 ```
 
+Produce HTML without input boxes and code:
+
+```bash
+jupyter nbconvert --execute --to html --output index.html --no-input notebooks/pv_at_simons.ac.ipynb
+```
+
 Clear existing output with:
 
 ```bash
