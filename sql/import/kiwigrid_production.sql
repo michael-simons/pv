@@ -18,8 +18,7 @@ FROM input
 ON CONFLICT (measured_on) DO UPDATE
 SET power = CASE
   WHEN power = 0 THEN excluded.power
-  WHEN power < excluded.power THEN (power + excluded.power) / 2
-  ELSE power END
+  ELSE (power + excluded.power) / 2 END
 ;
 
 SELECT count(*) AS 'after' FROM production;
