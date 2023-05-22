@@ -2,7 +2,7 @@ CREATE OR REPLACE VIEW buying_prices AS (
     -- Make sure we have a list of consecutive prices by traversing them recursively
     WITH RECURSIVE buy(valid_from, valid_until, value) AS (
         SELECT valid_from, valid_until, value FROM prices p
-        WHERE type = 'buy' AND NOT EXISTS (SELECT '' FROM prices o WHERE o.type = p.type AND o.valid_from < p.valid_from) AND valid_until IS NOT NULL
+        WHERE type = 'buy' AND NOT EXISTS (SELECT '' FROM prices o WHERE o.type = p.type AND o.valid_from < p.valid_from AND valid_until IS NOT NULL)
         UNION ALL
         SELECT p.valid_from, p.valid_until, p.value
         FROM prices p, buy
