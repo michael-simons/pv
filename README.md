@@ -16,7 +16,7 @@ mvn -f logger/pom.xml clean package
 
 ### For the database
 
-[DuckDB](https://duckdb.org) >= 0.7.1, Java 17 for running `initial_data.java`.
+[DuckDB](https://duckdb.org) >= 0.8.0, Java 17 for running `initial_data.java`.
 
 All schema scripts starts with an uppercase `V` followed by an incrementing number.
 
