@@ -1,8 +1,8 @@
 CREATE OR REPLACE VIEW average_production_per_hour AS (
     WITH hourly_averages AS (
         SELECT date_part('hour', measured_on) AS Hour,
-               avg(power)                     AS Wh
-        FROM production
+               avg(production)                AS Wh
+        FROM measurements
         GROUP BY ROLLUP(Hour)
         ORDER BY Hour ASC NULLS LAST
     ), max_Wh AS (

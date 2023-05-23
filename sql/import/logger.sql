@@ -8,11 +8,11 @@ WITH input AS (
     GROUP BY ts
     ORDER BY ts ASC
 )
-INSERT INTO production (measured_on, power)
+INSERT INTO measurements (measured_on, production)
 SELECT ts, power
 FROM input
 ON CONFLICT (measured_on) DO UPDATE
-SET power = CASE
-  WHEN power = 0 THEN excluded.power
-  ELSE (power + excluded.power) / 2 END
+SET production = CASE
+  WHEN production = 0 THEN excluded.production
+  ELSE (production + excluded.production) / 2 END
 ;

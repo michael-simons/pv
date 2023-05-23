@@ -7,7 +7,7 @@ WITH input AS (
     FROM 'meteocontrol.csv'
     GROUP BY ts
 )
-INSERT INTO production (measured_on, power)
+INSERT INTO measurements (measured_on, production)
 SELECT ts, power
 FROM input
-ON CONFLICT (measured_on) DO UPDATE SET power = excluded.power;
+ON CONFLICT (measured_on) DO UPDATE SET production = excluded.production;

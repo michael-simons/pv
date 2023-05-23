@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW overall_production AS (
     WITH per_day AS (
-        SELECT sum(power) / 4 / 1000 AS v
-        FROM production
+        SELECT sum(production) / 4 / 1000 AS v
+        FROM measurements
         GROUP BY date_trunc('day', measured_on)
     ), totals AS (
       SELECT round(min(v), 2)    AS worst,

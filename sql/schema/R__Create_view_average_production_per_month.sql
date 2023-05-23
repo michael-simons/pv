@@ -1,8 +1,8 @@
 CREATE OR REPLACE VIEW average_production_per_month AS (
     WITH monthly_sums AS (
-        SELECT date_trunc('month', measured_on) AS produced_in,
-               round(sum(power) / 4 / 1000, 2) AS kWh
-        FROM production
+        SELECT date_trunc('month', measured_on)     AS produced_in,
+               round(sum(production) / 4 / 1000, 2) AS kWh
+        FROM measurements
         GROUP BY produced_in
         ORDER BY produced_in ASC
     ), monthly_averages AS (

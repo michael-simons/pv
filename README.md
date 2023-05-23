@@ -41,23 +41,10 @@ duckdb pv.db < sql/data/Inventory_data.sql
 Some statistics will look odd without data for all quarterly hours, and I have created a script that loads initial data:
 
 ```bash
-java sql/import/initial_data.java | duckdb pv.db "INSERT INTO production SELECT ts::timestamptz, power FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
+java sql/import/initial_data.java | duckdb pv.db "INSERT INTO measurements(measured_on) SELECT ts::timestamptz FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
 ```
 
-Values are stored per quarterly hour, as local date times (local timezone is assumed). For dealing with specifics to your area, i.e. changes during summer / winter time observations, scripts needs adjustment. 
-
-`production` looks like this:
-
-```
-D show production;
-┌─────────────┬──────────────┬─────────┬─────────┬─────────┬───────┐
-│ column_name │ column_type  │  null   │   key   │ default │ extra │
-│   varchar   │   varchar    │ varchar │ varchar │ varchar │ int32 │
-├─────────────┼──────────────┼─────────┼─────────┼─────────┼───────┤
-│ measured_on │ TIMESTAMP    │ NO      │ PRI     │         │       │
-│ power       │ DECIMAL(8,3) │ NO      │         │         │       │
-└─────────────┴──────────────┴─────────┴─────────┴─────────┴───────┘
-```
+Measurements are stored per quarterly hour, as local date times (local timezone is assumed). For dealing with specifics to your area, i.e. changes during summer / winter time observations, scripts needs adjustment. 
 
 ### For the Jupyter notebook
 
@@ -120,7 +107,7 @@ I have a rendered version with my current dataset at [simons.ac/pv](http://simon
 _Logger puts out 1 minute measurements in watt (W)._
 
 ```bash
-duckdb pv.db < sql/logger.sql
+duckdb pv.db < sql/import/logger.sql
 ```
 
 #### Import from energymanager.com
@@ -128,7 +115,7 @@ duckdb pv.db < sql/logger.sql
 _Export is 15 minutes average watt (W)_.
 
 ```bash
-duckdb pv.db < sql/energymanager.sql
+duckdb pv.db < sql/import/energymanager.sql
 ```
 
 #### Import from meteocontrol.com daily chart export
@@ -136,7 +123,7 @@ duckdb pv.db < sql/energymanager.sql
 _Export is 5 minutes average kilowatt (kW)._
 
 ```bash
-duckdb pv.db < sql/meteocontrol.sql
+duckdb pv.db < sql/import/meteocontrol.sql
 ```
 
 Concatenating several exports into one file via [xsv](https://github.com/BurntSushi/xsv):

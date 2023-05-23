@@ -6,12 +6,12 @@ WITH input AS (
            power
     FROM read_csv_auto('energymanager.csv', names=['DateTime', 'power'])
 )
-INSERT INTO production (measured_on, power)
+INSERT INTO measurements (measured_on, production)
 SELECT ts, power
 FROM input
 ON CONFLICT (measured_on) DO UPDATE
-SET power = CASE
-  WHEN power = 0 THEN excluded.power
-  WHEN power < excluded.power THEN (power + excluded.power) / 2
-  ELSE power END
+SET production = CASE
+  WHEN production = 0 THEN excluded.production
+  WHEN production < excluded.production THEN (production + excluded.production) / 2
+  ELSE production END
 ;

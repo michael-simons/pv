@@ -1,8 +1,8 @@
 CREATE OR REPLACE VIEW yearly_production AS (
     WITH per_day AS (
         SELECT date_trunc('day', measured_on) AS day,
-               sum(power) / 4 / 1000 AS v
-        FROM production
+               sum(production) / 4 / 1000 AS v
+        FROM measurements
         GROUP BY day
     ), totals AS (
       SELECT date_part('year',  day) AS Year,
