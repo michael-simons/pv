@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS measurements (
     export DECIMAL(8,3)      NOT NULL DEFAULT 0
 );
 
-INSERT INTO measurements (measured_on, production) SELECT measured_on, power FROM production
+INSERT INTO measurements (measured_on, production)
+SELECT measured_on, power FROM production ORDER BY measured_on ASC
 ON CONFLICT (measured_on) DO NOTHING;
 
 DROP TABLE IF EXISTS production;
