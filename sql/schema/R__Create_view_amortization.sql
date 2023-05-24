@@ -13,9 +13,9 @@ CREATE OR REPLACE VIEW amortization AS (
     )
     SELECT per_month.month,
            -acquisition_cost.value + round(sum(full_sell.value * per_month.production) OVER (ORDER BY per_month.month ASC) / 100.0, 2)
-                AS fictitious_full_export ,
+                AS full_export,
            -acquisition_cost.value + round(sum(part_sell.value * per_month.export + buy.gross * (per_month.consumption - per_month.import)) OVER (ORDER BY per_month.month ASC) / 100.0)
-                AS actual_accumulation
+                AS partial_export
     FROM acquisition_cost CROSS JOIN per_month
     ASOF LEFT JOIN selling_prices part_sell
         ON per_month.month >= part_sell.valid_from AND part_sell.type = 'partial_sell'
