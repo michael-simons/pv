@@ -13,7 +13,7 @@ TO=${4:-$(gdate -d "$FROM + 6 days" +'%Y-%m-%d')}
 DIR="$(dirname "$(realpath "$0")")"
 cd "$DIR"/..
 
-curl -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59" \
+curl -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
  -H 'Host: hems.kiwigrid.com' \
