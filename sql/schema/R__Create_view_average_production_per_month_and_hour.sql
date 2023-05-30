@@ -1,8 +1,8 @@
 CREATE OR REPLACE VIEW average_production_per_month_and_hour AS (
     WITH production_per_month_and_hour AS (
-        SELECT any_value(strftime(measured_on, '%B'))    AS Month,
-               any_value(date_part('hour', measured_on)) AS Hour,
-               avg(production) / 1000                    AS Energy
+        SELECT any_value(date_part('month', measured_on))AS month,
+               any_value(date_part('hour', measured_on)) AS hour,
+               avg(production) / 1000                    AS production
           FROM measurements
          GROUP BY date_trunc('hour', measured_on)
          ORDER BY Hour
@@ -10,8 +10,8 @@ CREATE OR REPLACE VIEW average_production_per_month_and_hour AS (
     SELECT *
     FROM production_per_month_and_hour
     PIVOT (
-        round(avg(Energy), 2)
-        FOR Month IN ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
-        GROUP BY Hour
+        round(avg(production), 2)
+        FOR month IN (1, 2, 3, 4, 5,6,7,8,9,10,11,12)
+        GROUP BY hour
     )
 );

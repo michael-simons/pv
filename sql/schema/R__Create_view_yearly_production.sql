@@ -5,7 +5,7 @@ CREATE OR REPLACE VIEW yearly_production AS (
         FROM measurements
         GROUP BY day
     ), totals AS (
-      SELECT date_part('year',  day) AS Year,
+      SELECT date_part('year',  day) AS year,
              round(min(v), 2)        AS worst,
              round(max(v), 2)        AS best,
              round(avg(v), 2)        AS daily_avg,
@@ -15,14 +15,14 @@ CREATE OR REPLACE VIEW yearly_production AS (
       WHERE v <> 0
       GROUP BY year
     )
-    SELECT Year,
-           totals.worst        AS 'Worst day',
-           totals.best         AS 'Best day',
-           totals.daily_avg    AS 'Daily average',
-           totals.daily_median AS 'Median',
-           totals.total        AS 'Total production',
+    SELECT year,
+           totals.worst,
+           totals.best,
+           totals.daily_avg,
+           totals.daily_median,
+           totals.total,
            CAST (CASE WHEN dv.value IS NULL THEN NULL
                       ELSE round(totals.total / CAST(dv.value AS NUMERIC), 2) END AS NUMERIC)
-                               AS 'Total yield (kWh/kWp)'
+                               AS total_yield
     FROM totals LEFT OUTER JOIN domain_values dv ON (dv.name = 'INSTALLED_PEAK_POWER')
 );

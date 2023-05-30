@@ -83,19 +83,19 @@ launchctl remove log-power-output
 Run the notebook with:
 
 ```bash
-jupyter notebook notebooks/pv_at_simons.ac.ipynb
+jupyter notebook notebooks/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb
 ```
 
 Produce HTML without input boxes and code:
 
 ```bash
-jupyter nbconvert --execute --to html --output index.html --no-input notebooks/pv_at_simons.ac.ipynb
+jupyter nbconvert --execute --to html --output index.html --no-input notebooks/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb
 ```
 
 Clear existing output with:
 
 ```bash
-jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/pv_at_simons.ac.ipynb
+jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb
 ```
 
 I have a rendered version with my current dataset at [simons.ac/pv](http://simons.ac/pv).
@@ -175,7 +175,7 @@ duckdb --readonly pv.db "SELECT * FROM peaks"
 ##### Average per month
 
 ```bash
-duckdb --readonly pv.db "SELECT * FROM average_production_per_month"
+duckdb --readonly pv.db "SELECT month AS Month, production AS kWh, viz AS 'Average energy produced' FROM average_production_per_month"
 ```
 
 Should look something like this, which I totally love:
@@ -185,7 +185,7 @@ Should look something like this, which I totally love:
 ##### Average per hour
 
 ```bash
-duckdb --readonly pv.db "SELECT * FROM average_production_per_hour"
+duckdb --readonly pv.db "SELECT hour AS Hour, production AS kWh, viz AS 'Average energy produced' FROM average_production_per_hour"
 ```
 
 ##### Average per hour and month

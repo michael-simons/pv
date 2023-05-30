@@ -4,8 +4,8 @@ CREATE OR REPLACE VIEW peaks AS (
         FROM measurements
         WHERE production <> 0.0
     )
-    SELECT production AS 'Power (W)',
-           max(measured_on) AS 'Last time Measured on'
+    SELECT round(production, 2) AS production,
+           max(measured_on) AS last_time_measured
     FROM mm JOIN measurements ON (production = mm._min OR production = mm._max)
     GROUP BY production
     ORDER BY production ASC

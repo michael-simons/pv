@@ -9,7 +9,7 @@ CREATE OR REPLACE VIEW overall_internal_consumption_share AS (
         FROM measurements, beginning_of_measurements bom
         WHERE measured_on >= bom.value
     )
-    SELECT coalesce(round((production - export) / production  * 100, 2), 0) AS 'Internal consumption in %',
-           coalesce(round((production - export) / consumption * 100, 2), 0) AS 'Autarchy in %'
+    SELECT coalesce(round((production - export) / production  * 100, 2), 0) AS internal_consumption,
+           coalesce(round((production - export) / consumption * 100, 2), 0) AS autarchy
     FROM totals
 );
