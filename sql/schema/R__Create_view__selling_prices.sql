@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW selling_prices AS (
+CREATE OR REPLACE VIEW _selling_prices AS (
     -- Make sure we have a list of consecutive prices by traversing them recursively
     WITH RECURSIVE sell(valid_from, valid_until, value, type) AS (
         SELECT valid_from, valid_until, value, p.type FROM prices p

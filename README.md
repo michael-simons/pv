@@ -27,8 +27,8 @@ find sql/schema -iname "V*__*.sql" -print | sort | xargs cat | duckdb pv.db
 All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
 
 ```bash
-find sql/schema -iname "R__*.sql" -print0 |\
-  (xargs -r0  cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW' ORDER BY table_name ASC")|\
+find sql/schema -iname "R__*.sql" -print | sort |\
+  (xargs cat; echo "SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'VIEW' ORDER BY table_name ASC")|\
   duckdb pv.db
 ```
 
