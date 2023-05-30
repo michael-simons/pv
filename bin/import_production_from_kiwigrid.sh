@@ -5,9 +5,10 @@ export LC_ALL=en_US.UTF-8
 
 _now=$(gdate)
 
-USERNAME=$1
-PASSWORD=$2
-DB="$(pwd)/$3"
+DIR="$(dirname "$(realpath "$0")")"
+DB="$(pwd)/$1"
+USERNAME=$2
+PASSWORD=$3
 FROM=${4:-$(gdate -d "$_now" +'%Y-%m-%d')}
 TO=${5:-$(gdate -d "$FROM + 6 days" +'%Y-%m-%d')}
 
@@ -23,9 +24,6 @@ xargs -L 1 curl -sL --cookie .tmp/cookies.txt --cookie-jar .tmp/cookies.txt > /d
 curl -s https://new.energymanager.com/context --cookie .tmp/cookies.txt |\
 jq --raw-output .oauth.accessToken
 )
-
-
-DIR="$(dirname "$(realpath "$0")")"
 
 curl -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Accept: application/json' \
@@ -48,7 +46,7 @@ curl -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/consumpti
 xsv join ts .tmp/production.csv ts .tmp/consumption.csv  | xsv select '!ts[1]' | \
 xsv join ts /dev/stdin ts .tmp/export.csv | xsv select '!ts[1]' | \
 xsv join ts /dev/stdin ts .tmp/import.csv | xsv select '!ts[1]' | \
-duckdb "$DB" -c ".read $DIR/../sql/import/kiwigrid_production.sql"
+duckdb "$DB" -c ".read $DIR/kiwigrid_production.sql"
 
 rm -rf .tmp
 

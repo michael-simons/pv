@@ -4,7 +4,7 @@ SET TimeZone='Europe/Berlin';
 WITH input AS (
     SELECT strptime(DateTime, '%Y-%m-%d %H:%M')::timestamptz AS ts,
            power
-    FROM read_csv_auto('energymanager.csv', names=['DateTime', 'power'])
+    FROM read_csv_auto('/dev/stdin', names=['DateTime', 'power'])
 )
 INSERT INTO measurements (measured_on, production)
 SELECT ts, power

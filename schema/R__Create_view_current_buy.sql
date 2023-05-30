@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW current_buy AS (
+CREATE OR REPLACE VIEW v_current_buy AS (
     WITH latest_price AS (
         SELECT rank() OVER (ORDER BY valid_from DESC, valid_until DESC NULLS FIRST) as pos, valid_from, valid_until, value
         FROM prices

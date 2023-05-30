@@ -4,7 +4,7 @@ SET TimeZone='Europe/Berlin';
 WITH input AS (
     SELECT date_trunc('minute', time_bucket(INTERVAL '15 Minutes', DateTime::timestamptz)) AS ts,
            avg(cast(replace(coalesce(Leistung,'0'), ',', '.') as numeric)) * 1000 AS power
-    FROM 'meteocontrol.csv'
+    FROM read_csv_auto('/dev/stdin')
     GROUP BY ts
 )
 INSERT INTO measurements (measured_on, production)

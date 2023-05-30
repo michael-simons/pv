@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW overall_production AS (
+CREATE OR REPLACE VIEW v_overall_production AS (
     WITH per_day AS (
         SELECT sum(production) / 4 / 1000 AS v
         FROM measurements
@@ -12,13 +12,13 @@ CREATE OR REPLACE VIEW overall_production AS (
       FROM per_day
       WHERE v <> 0
     )
-    SELECT totals.worst        AS 'Worst day',
-           totals.best         AS 'Best day',
-           totals.daily_avg    AS 'Daily average',
-           totals.daily_median AS 'Median',
-           totals.total        AS 'Total production',
+    SELECT totals.worst,
+           totals.best,
+           totals.daily_avg,
+           totals.daily_median,
+           totals.total,
            CAST (CASE WHEN dv.value IS NULL THEN NULL
                       ELSE round(totals.total / CAST(dv.value AS NUMERIC), 2) END AS NUMERIC)
-                               AS 'Total yield (kWh/kWp)'
+                               AS total_yield
     FROM totals LEFT OUTER JOIN domain_values dv ON (dv.name = 'INSTALLED_PEAK_POWER')
 );
