@@ -51,18 +51,10 @@ Run the power logger with:
 ./logger/target/assembly/bin/log-power-output
 ```
 
-Again, this might damage your inverter, burn down the house and what not. Use at your own risk.
-
-On macOS, you can use `launchctl` to run this program as a service. See below for logfile rotation.
+Again, this might damage your inverter, burn down the house and what not. Use at your own risk. The logger puts out 1 minute measurements in watt (W) by default which can be imported after creating a database file as described above like this:
 
 ```bash
-launchctl submit -l log-power-output -o `pwd`/logger.csv -- `pwd`/logger/target/log-power-output -a your.address 
-```
-
-Remove again with
-
-```bash
-launchctl remove log-power-output
+more logger.csv | duckdb pv.db -c ".read bin/import_logger.sql"
 ```
 
 ### Jupyter Notebook
@@ -88,50 +80,6 @@ jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace notebooks/Pho
 I have a rendered version with my current dataset at [simons.ac/pv](http://simons.ac/pv).
 
 ### Database
-
-#### Import from the loggers output
-
-_Logger puts out 1 minute measurements in watt (W)._
-
-```bash
-more logger.csv | duckdb pv.db -c ".read bin/import_logger.sql"
-```
-
-#### Import from energymanager.com
-
-_Export is 15 minutes average watt (W)_.
-
-```bash
-more energymanager.csv | duckdb pv.db -c ".read bin/import_energymanager.sql"
-```
-
-#### Import from meteocontrol.com daily chart export
-
-_Export is 5 minutes average kilowatt (kW)._
-
-```bash
-more chart.csv | duckdb pv.db -c ".read bin/import_meteocontrol.sql"
-```
-
-Concatenating several exports into one file via [xsv](https://github.com/BurntSushi/xsv):
-
-```bash
-find . -type f -iname "chart*.csv" -print0 | xargs -r0 xsv cat -d ";" rows | xsv fmt -t ";" | duckdb pv.db -c ".read bin/import_meteocontrol.sql"
-```
-
-#### Creating backups
-
-The whole database can be exported either as CSV files like this
-
-```sql
-EXPORT DATABASE 'target_folder';
-```
-
-Or if you prefer [Parquet](https://parquet.apache.org), use the following:
-
-```sql
-EXPORT DATABASE 'target_folder' (FORMAT PARQUET, COMPRESSION ZSTD);
-```
 
 #### Examples
 
@@ -177,32 +125,16 @@ duckdb --readonly notebooks/pv.db "SELECT * FROM v_average_production_per_month_
 ```
 ![stats_avg_per_hour_and_month](media/stats_avg_per_hour_and_month.png)
 
-## Managing log files
+#### Creating backups
 
-### Using `split`
+The whole database can be exported either as CSV files like this
 
-`split` can be used to split data into files with a given number of lines or chunk-size like that:
-
-```bash
-./logger/target/log-power-output -a your.address | split -d -l4690 - logger.csv.
+```sql
+EXPORT DATABASE 'target_folder';
 ```
 
-If needed they can be aggregated into one file like this
+Or if you prefer [Parquet](https://parquet.apache.org), use the following:
 
-```bash
-find . -type f -iname "logger.csv.*" -print0 | xargs -r0 cat | sort > logger.csv
-```
-
-### Using `logrotate`
-
-There's a template configuration file for `logrotate` that might be helpful. Assuming you are logging like this:
-
-```bash
-./logger/target/log-power-output -a your.address >> logger.csv
-```
-
-you can rotate everything with this command
-
-```bash
-logrotate -f etc/logrotate.conf 
+```sql
+EXPORT DATABASE 'target_folder' (FORMAT PARQUET, COMPRESSION ZSTD);
 ```
