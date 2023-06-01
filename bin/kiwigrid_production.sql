@@ -6,8 +6,7 @@ SET TimeZone='Europe/Berlin';
 SELECT count(*) AS 'before' FROM measurements;
 
 WITH input AS (
-    SELECT date_trunc('minute', time_bucket(INTERVAL '15 Minutes', ts::timestamptz))
-                            AS _measured_on,
+    SELECT time_bucket(INTERVAL '15 Minutes', ts::timestamptz) AS _measured_on,
            avg(production)  AS _production,
            avg(consumption) AS _consumption,
            avg(export)      AS _export,
