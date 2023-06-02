@@ -45,10 +45,13 @@ curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/
 (echo "ts,consumption"; jq --raw-output '.timeseries[] | select(.name == "PowerConsumed") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/consumption.json) > .tmp/consumption.csv
 (echo "ts,import";      jq --raw-output '.timeseries[] | select(.name == "PowerIn")       | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/consumption.json) > .tmp/import.csv
 
-xsv join ts .tmp/production.csv ts .tmp/consumption.csv  | xsv select '!ts[1]' | \
-xsv join ts /dev/stdin ts .tmp/export.csv | xsv select '!ts[1]' | \
-xsv join ts /dev/stdin ts .tmp/import.csv | xsv select '!ts[1]' | \
-duckdb "$DB" -c ".read $DIR/kiwigrid_production.sql"
+duckdb -c "COPY (
+  SELECT *
+    FROM '.tmp/production.csv'
+    JOIN '.tmp/consumption.csv' USING (ts)
+    JOIN '.tmp/export.csv' USING (ts)
+    JOIN '.tmp/import.csv' USING (ts)
+) TO '/dev/stdout' (HEADER)" | duckdb "$DB" -c ".read $DIR/kiwigrid_production.sql"
 
 rm -rf .tmp
 
