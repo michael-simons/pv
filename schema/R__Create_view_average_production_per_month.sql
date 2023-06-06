@@ -1,6 +1,6 @@
 CREATE OR REPLACE VIEW v_average_production_per_month AS (
     WITH monthly_sums AS (
-        SELECT date_part('month', measured_on)     AS month,
+        SELECT date_part('month', measured_on)      AS month,
                round(sum(production) / 4 / 1000, 2) AS kWh
         FROM measurements
         GROUP BY month
