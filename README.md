@@ -38,7 +38,7 @@ All views - think of them as public API to this database - start with an `v_`.
 I have added a `requirements.txt` usable with `pip` like this:
 
 ```bash
-pip install -r requirements.txt
+pip install -r notebooks/requirements.txt
 ```
 
 ## Usage
