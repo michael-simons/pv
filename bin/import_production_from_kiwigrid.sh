@@ -23,11 +23,16 @@ curl -A "$UA" -s https://auth.energymanager.com/login \
  --cookie-jar .tmp/cookies.txt |\
 jq --raw-output '"https://auth.energymanager.com/authorize?response_type=code&state=&client_id=kiwigrid.energy-monitor-home&overrideRedirectUri=true&redirect_uri=" + .redirectUri' |\
 xargs -L 1 curl -A "$UA" -sL --cookie .tmp/cookies.txt --cookie-jar .tmp/cookies.txt > /dev/null; \
-curl -A "$UA" -s https://new.energymanager.com/context --cookie .tmp/cookies.txt |\
+curl -A "$UA" -s https://new.energymanager.com/context \
+ -H 'Referer: https://new.energymanager.com/' \
+ -H 'Host: new.energymanager.com' \
+ -H 'Accept: application/json' \
+ --cookie .tmp/cookies.txt |\
 jq --raw-output .oauth.accessToken
 )
 
 curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+ -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
  -H 'Host: hems.kiwigrid.com' \
@@ -37,6 +42,7 @@ curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/
 (echo "ts,export";      jq --raw-output '.timeseries[] | select(.name == "PowerOut")      | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/production.json) > .tmp/export.csv
 
 curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/consumption?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+ -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
  -H 'Host: hems.kiwigrid.com' \
