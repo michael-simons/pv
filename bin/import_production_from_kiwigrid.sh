@@ -31,7 +31,7 @@ curl -A "$UA" -s https://new.energymanager.com/context \
 jq --raw-output .oauth.accessToken
 )
 
-curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.31/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
@@ -41,7 +41,7 @@ curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/
 (echo "ts,production";  jq --raw-output '.timeseries[] | select(.name == "PowerProduced") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/production.json) > .tmp/production.csv
 (echo "ts,export";      jq --raw-output '.timeseries[] | select(.name == "PowerOut")      | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/production.json) > .tmp/export.csv
 
-curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.30/analytics/consumption?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.31/analytics/consumption?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
