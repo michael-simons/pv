@@ -70,7 +70,7 @@
 		<name-of-executable>log-power-output</name-of-executable>
 		<name-of-main-class>ac.simons.pv.Logger</name-of-main-class>
 		<native.maven.plugin.version>0.9.21</native.maven.plugin.version>
-		<picocli.version>4.7.0</picocli.version>
+		<picocli.version>4.7.5</picocli.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<slf4j.version>2.0.7</slf4j.version>
