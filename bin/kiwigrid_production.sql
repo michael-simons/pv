@@ -1,5 +1,6 @@
 -- This script reads its import from stdin
 
+install icu;
 load icu;
 SET TimeZone='Europe/Berlin';
 
