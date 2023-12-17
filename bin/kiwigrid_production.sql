@@ -4,6 +4,8 @@ install icu;
 load icu;
 SET TimeZone='Europe/Berlin';
 
+.mode line
+
 SELECT count(*) AS 'before' FROM measurements;
 
 WITH input AS (
