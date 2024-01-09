@@ -61,4 +61,31 @@ duckdb -c "COPY (
 
 rm -rf .tmp
 
+open_meteo_url=`duckdb "$DB" -s ".mode list" -s "
+  SELECT CASE WHEN '$TO' <= today() - 3 THEN 'https://archive-api.open-meteo.com/v1/archive?' 
+              ELSE 'https://api.open-meteo.com/v1/forecast?' END || base || '&start_date=$FROM&end_date=$TO'
+  FROM v_weather_data_source
+" | tail -n1`
+
+duckdb "$DB" -s "SET force_download=true" -s "
+  INSERT INTO weather_data BY NAME
+  SELECT strptime(unnest(time), '%Y-%m-%dT%H:%M')   AS measured_on, 
+         unnest(shortwave_radiation)                AS shortwave_radiation,
+         unnest(temperature_2m)                     AS temperature_2m,
+         unnest(cloud_cover)                        AS cloud_cover,
+         unnest(cloud_cover_low)                    AS cloud_cover_low,
+         unnest(cloud_cover_mid)                    AS cloud_cover_mid,
+         unnest(cloud_cover_high)                   AS cloud_cover_high,
+         unnest(weather_code)                       AS weather_code,
+         unnest(precipitation)                      AS precipitation,
+         unnest(rain)                               AS rain,
+         unnest(snowfall)                           AS snowfall
+  FROM (
+    SELECT unnest(hourly)
+    FROM read_json_auto('$open_meteo_url')
+  )
+  ORDER BY measured_on
+  ON CONFLICT DO NOTHING
+"
+
 >&2 echo "New end date: $(gdate -d "$TO + 1 days" +'%Y-%m-%d')"
