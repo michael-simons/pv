@@ -54,7 +54,7 @@ Run the power logger with:
 Again, this might damage your inverter, burn down the house and what not. Use at your own risk. The logger puts out 1 minute measurements in watt (W) by default which can be imported after creating a database file as described above like this:
 
 ```bash
-more logger.csv | duckdb pv.db -c ".read bin/import_logger.sql"
+more logger.csv | duckdb pv.db -c ".read attic/import_logger.sql"
 ```
 
 ### Jupyter Notebook
