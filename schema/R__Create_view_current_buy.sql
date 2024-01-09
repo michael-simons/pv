@@ -3,7 +3,7 @@ CREATE OR REPLACE VIEW v_current_buy AS (
         SELECT rank() OVER (ORDER BY valid_from DESC, valid_until DESC NULLS FIRST) as pos, valid_from, valid_until, value
         FROM prices
         WHERE type = 'buy'
-        LIMIT 1
+        QUALIFY pos = 1
     ), latest_tax AS (
         SELECT value
         FROM applicable_vat_values

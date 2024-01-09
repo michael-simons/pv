@@ -5,7 +5,7 @@ CREATE OR REPLACE VIEW v_average_production_per_month_and_hour AS (
                avg(production) / 1000                    AS production
           FROM measurements
          GROUP BY date_trunc('hour', measured_on)
-         ORDER BY Hour
+         ORDER BY hour
     )
     PIVOT production_per_month_and_hour
     ON month IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
