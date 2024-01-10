@@ -39,4 +39,5 @@ INSERT INTO co2_factor_per_year (year, value) VALUES
   (2019, 411),
   (2020, 369),
   (2021, 410),
-  (2022, 434);
+  (2022, 434)
+  ON CONFLICT DO NOTHING;
