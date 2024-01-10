@@ -3,14 +3,11 @@
 set -euo pipefail
 export LC_ALL=en_US.UTF-8
 
-_now=$(gdate)
-
-DIR="$(dirname "$(realpath "$0")")"
 DB="$(pwd)/$1"
 FROM=${2}
 TO=${3}
 
-default_parameters=`duckdb "$DB" -s ".mode list" -s "SELECT base FROM v_weather_data_source" | tail -n1`
+default_parameters=$(duckdb "$DB" -s ".mode list" -s "SELECT base FROM v_weather_data_source" | tail -n1)
 
 duckdb "$DB" -s "SET force_download=true" -s "
   INSERT INTO weather_data BY NAME
