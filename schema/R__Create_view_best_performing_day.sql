@@ -10,7 +10,7 @@ CREATE OR REPLACE VIEW v_best_performing_day AS (
            production,
            shortwave_radiation
     FROM measurements m
-    ASOF LEFT JOIN weather_data w ON w.measured_on + INTERVAL 1 hour <= m.measured_on, top_1
+    ASOF LEFT JOIN weather_data w ON w.measured_on - INTERVAL 1 hour <= m.measured_on, top_1
     WHERE date_trunc('day', m.measured_on) = top_1.value
     ORDER BY m.measured_on ASC
 );
