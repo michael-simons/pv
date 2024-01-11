@@ -21,8 +21,6 @@ CREATE OR REPLACE VIEW v_weather_data_source AS (
     FROM duckdb_columns()
     WHERE table_name = 'weather_data' AND column_name <> 'measured_on'
   )
-  SELECT 'latitude=' || lat.value || '&longitude=' || long.value || '&timezone=Europe%2FBerlin&hourly=' || columns.value AS base
-  FROM domain_values lat, domain_values long, columns
-  WHERE lat.name = 'LATITUDE'
-    AND long.name = 'LONGITUDE'
+  SELECT 'latitude=' || lat || '&longitude=' || long || '&timezone=Europe%2FBerlin&hourly=' || columns.value AS base
+  FROM v_place_of_installation, columns
 );
