@@ -13,9 +13,9 @@ find $DIR/../schema -iname "V*__*.sql" -print | sort |\
 
 find $DIR/../schema -iname "R__*.sql" -print | sort |\
   (xargs cat; echo "SELECT table_name FROM information_schema.tables WHERE table_type = 'VIEW' ORDER BY table_name ASC")|\
-  duckdb pv.db
+  duckdb "$DB"
 
 if [ "$CREATE_INITIAL_DATA" == "true" ]
 then
-java bin/initial_data.java | duckdb pv.db "INSERT INTO measurements(measured_on) SELECT ts::timestamptz FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
+java bin/initial_data.java | duckdb "$DB" "INSERT INTO measurements(measured_on) SELECT ts::timestamptz FROM read_csv_auto('/dev/stdin') ON CONFLICT (measured_on) DO NOTHING";
 fi
