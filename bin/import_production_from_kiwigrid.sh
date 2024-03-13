@@ -17,12 +17,11 @@ UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML,
 mkdir -p .tmp
 
 BEARER=$(
-curl -A "$UA" -s https://auth.energymanager.com/login \
- -H "Content-Type: application/x-www-form-urlencoded" \
- --data "username=$USERNAME&password=$PASSWORD&autologin=false&channel=solarwatt&originalRequest=%2Fauthorize%3Fresponse_type%3Dcode%26amp%3Bredirect_uri%3Dhttps%253A%252F%252Fnew.energymanager.com%252Frest%252Fauth%252Fauth_grant%253Fchannel%253Dsolarwatt%26amp%3Bstate%3DwBdeInUYbZcqIpT15sXny6kj%26amp%3Bclient_id%3Dkiwigrid.energy-monitor-home" \
- --cookie-jar .tmp/cookies.txt |\
-jq --raw-output '"https://auth.energymanager.com/authorize?response_type=code&state=&client_id=kiwigrid.energy-monitor-home&overrideRedirectUri=true&redirect_uri=" + .redirectUri' |\
-xargs -L 1 curl -A "$UA" -sL --cookie .tmp/cookies.txt --cookie-jar .tmp/cookies.txt > /dev/null; \
+curl -A "$UA" -s "https://auth.energymanager.com/auth/realms/solarwatt/protocol/openid-connect/auth?response_type=code&client_id=energy-monitor-home&redirect_uri=https%3A%2F%2Fnew.energymanager.com%2Frest%2Fauth%2Fauth_grant&scope=openid" \
+  -H 'Accept:  text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' \
+  --cookie-jar .tmp/cookies.txt |\
+xidel -se "//form[@id='kc-form-login']/@action" - |\
+xargs -L 1 curl -A "$UA" -sL --cookie .tmp/cookies.txt --cookie-jar .tmp/cookies.txt -H "Content-Type: application/x-www-form-urlencoded" --data "username=$USERNAME&password=$PASSWORD" > /dev/null; \
 curl -A "$UA" -s https://new.energymanager.com/context \
  -H 'Referer: https://new.energymanager.com/' \
  -H 'Host: new.energymanager.com' \
@@ -31,25 +30,17 @@ curl -A "$UA" -s https://new.energymanager.com/context \
 jq --raw-output .oauth.accessToken
 )
 
-curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.31/analytics/production?type=POWER&splitProduction=true&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.48/analytics/overview?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
  -H 'Host: hems.kiwigrid.com' \
- -H 'Origin: https://new.energymanager.com' > .tmp/production.json
+ -H 'Origin: https://new.energymanager.com' > .tmp/overview.json
 
-(echo "ts,production";  jq --raw-output '.timeseries[] | select(.name == "PowerProduced") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/production.json) > .tmp/production.csv
-(echo "ts,export";      jq --raw-output '.timeseries[] | select(.name == "PowerOut")      | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/production.json) > .tmp/export.csv
-
-curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.31/analytics/consumption?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
- -H 'Referer: https://new.energymanager.com/' \
- -H 'Accept: application/json' \
- -H "Authorization: Bearer $BEARER" \
- -H 'Host: hems.kiwigrid.com' \
- -H 'Origin: https://new.energymanager.com' > .tmp/consumption.json
-
-(echo "ts,consumption"; jq --raw-output '.timeseries[] | select(.name == "PowerConsumed") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/consumption.json) > .tmp/consumption.csv
-(echo "ts,import";      jq --raw-output '.timeseries[] | select(.name == "PowerIn")       | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/consumption.json) > .tmp/import.csv
+(echo "ts,production";  jq --raw-output '.timeseries[] | select(.name == "PowerProduced") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/overview.json) > .tmp/production.csv
+(echo "ts,export";      jq --raw-output '.timeseries[] | select(.name == "PowerOut")      | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/overview.json) > .tmp/export.csv
+(echo "ts,consumption"; jq --raw-output '.timeseries[] | select(.name == "PowerConsumed") | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/overview.json) > .tmp/consumption.csv
+(echo "ts,import";      jq --raw-output '.timeseries[] | select(.name == "PowerIn")       | .values | to_entries | map("\(.key | sub("\\+0[12]:00"; ":00")),\(.value)") | .[]' .tmp/overview.json) > .tmp/import.csv
 
 duckdb -c "COPY (
   SELECT *
