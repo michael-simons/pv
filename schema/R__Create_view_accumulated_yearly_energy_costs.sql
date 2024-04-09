@@ -9,7 +9,6 @@ CREATE OR REPLACE VIEW v_accumulated_yearly_energy_costs AS (
                sum(coalesce(consumption, 0)) / 4 / 1000 AS consumption,
                sum(coalesce(export,      0)) / 4 / 1000 AS export,
                sum(coalesce(import,      0)) / 4 / 1000 AS import
-        -- FROM months LEFT OUTER JOIN measurements m ON m.measured_on BETWEEN months.start AND months.end
         FROM measurements m FULL OUTER JOIN months ON date_trunc('month', m.measured_on) = months.value
         GROUP BY month
     )
