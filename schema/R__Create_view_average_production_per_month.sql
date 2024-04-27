@@ -1,8 +1,14 @@
 CREATE OR REPLACE VIEW v_average_production_per_month AS (
-    WITH monthly_sums AS (
+    WITH first_full AS (
+       SELECT date_trunc('month', measured_on) AS month
+       FROM measurements
+       GROUP BY month HAVING cast(count(*)/96 AS int) = date_part('day', last_day(month))
+       ORDER BY month LIMIT 1
+    ), monthly_sums AS (
         SELECT date_trunc('month', measured_on) AS beginning_of_month,
                sum(production) / 4 / 1000       AS kWh
-        FROM measurements
+        FROM measurements, first_full
+        WHERE beginning_of_month >= first_full.month
         GROUP BY beginning_of_month
     ), monthly_solar AS (
         SELECT date_trunc('month', measured_on) AS beginning_of_month,
