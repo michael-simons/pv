@@ -16,7 +16,7 @@ mvn -f logger/pom.xml clean package
 
 ### For the database
 
-[DuckDB](https://duckdb.org) >= 0.8.0, Java 17 for running `initial_data.java`.
+[DuckDB](https://duckdb.org) >= 0.8.0.
 
 The schema is kind of separated in non-repeatable migrations and repeatable migrations. 
 In reality, the non-repeatable ones are idempotent, too, at least at the moment. 
