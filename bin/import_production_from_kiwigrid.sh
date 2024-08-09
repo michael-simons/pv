@@ -30,7 +30,7 @@ curl -A "$UA" -s https://new.energymanager.com/context \
 jq --raw-output .oauth.accessToken
 )
 
-curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.48/analytics/overview?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
+curl -A "$UA" -f --no-progress-meter "https://hems.kiwigrid.com/v2.52/analytics/overview?type=POWER&from=${FROM}T00:00:00&to=${TO}T23:59:59&resolution=PT5M" \
  -H 'Referer: https://new.energymanager.com/' \
  -H 'Accept: application/json' \
  -H "Authorization: Bearer $BEARER" \
