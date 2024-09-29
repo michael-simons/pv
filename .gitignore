@@ -4,6 +4,9 @@ target/
 !**/src/main/**
 !**/src/test/**
 
+.venv
+.secrets
+
 ### STS ###
 .apt_generated
 .classpath
