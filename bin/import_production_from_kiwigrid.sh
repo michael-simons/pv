@@ -53,8 +53,6 @@ install icu;
 load icu;
 SET TimeZone='Europe/Berlin';
 
-SELECT count(*) AS 'before' FROM measurements;
-
 WITH input AS (
     SELECT time_bucket(INTERVAL '15 Minutes', ts::timestamptz) AS _measured_on,
            avg(production)  AS _production,
@@ -75,8 +73,6 @@ SET production = CASE
     export = excluded.export,
     import = excluded.import
 ;
-
-SELECT count(*) AS 'after' FROM measurements;
 "
 
 rm -rf .tmp
@@ -107,5 +103,3 @@ duckdb "$DB" -s "SET force_download=true" -s "
   ORDER BY measured_on
   ON CONFLICT DO NOTHING
 "
-
->&2 echo "New end date: $(gdate -d "$TO + 1 days" +'%Y-%m-%d')"
