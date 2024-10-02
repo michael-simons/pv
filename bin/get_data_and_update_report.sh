@@ -71,7 +71,7 @@ IMPORT_QUERY="
   unnested(name, ts, v) AS (
     SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
   ),
-  pivoted AS (pivot unnested on name using any_value(v)),
+  pivoted AS (pivot unnested ON name USING any_value(v)),
   input AS (
     SELECT time_bucket(INTERVAL '15 Minutes', replace(ts, '+', ':00+')::timestamptz) AS _measured_on,
            avg(PowerProduced) AS _production,
@@ -93,6 +93,27 @@ IMPORT_QUERY="
       import = excluded.import
 "
 
+IMPORT_WEATHER_DATA_QUERY="
+  INSERT INTO weather_data BY NAME
+  SELECT strptime(unnest(time), '%Y-%m-%dT%H:%M')   AS measured_on,
+         unnest(shortwave_radiation)                AS shortwave_radiation,
+         unnest(temperature_2m)                     AS temperature_2m,
+         unnest(cloud_cover)                        AS cloud_cover,
+         unnest(cloud_cover_low)                    AS cloud_cover_low,
+         unnest(cloud_cover_mid)                    AS cloud_cover_mid,
+         unnest(cloud_cover_high)                   AS cloud_cover_high,
+         unnest(weather_code)                       AS weather_code,
+         unnest(precipitation)                      AS precipitation,
+         unnest(rain)                               AS rain,
+         unnest(snowfall)                           AS snowfall
+  FROM (
+    SELECT unnest(hourly)
+    FROM read_json_auto(getenv('open_meteo_url'))
+  )
+  ORDER BY measured_on
+  ON CONFLICT DO NOTHING
+"
+
 # Some stats before
 duckdb "$DB" -line\
   -c "SELECT count(*)               AS 'Num measurements before' FROM measurements"\
@@ -107,38 +128,25 @@ for i in $(duckdb $DB -readonly -noheader -csv -c "$RANGES_QUERY"); do
   TO="$(cut -d',' -f2 <<<"$i")"
   export TO
 
-  echo "Importing from $FROM to $TO"
-  duckdb "$DB" -c ".mode trash" -c "$CREATE_SECRET_QUERY" -c "$IMPORT_QUERY"
-  
-  echo "Updating weather data"
+  # The weather URL is dynamically computer with a bunch of columns
   open_meteo_url=$(duckdb "$DB" -c ".mode list" -c "
-    SELECT CASE WHEN getEnv('TO')::date <= today() - 3 THEN 'https://archive-api.open-meteo.com/v1/archive?' 
-                ELSE 'https://api.open-meteo.com/v1/forecast?' END || base || '&start_date='|| getenv('FROM') || '&end_date=' || getEnv('TO')
+    SELECT CASE WHEN getenv('TO')::date <= today() - 3 THEN 'https://archive-api.open-meteo.com/v1/archive?'
+                ELSE 'https://api.open-meteo.com/v1/forecast?' END || base || '&start_date='|| getenv('FROM') || '&end_date=' || getenv('TO')
     FROM v_weather_data_source
   " | tail -n1)
   export open_meteo_url
 
-  duckdb "$DB" -c "SET force_download=true" -c "
-    INSERT INTO weather_data BY NAME
-    SELECT strptime(unnest(time), '%Y-%m-%dT%H:%M')   AS measured_on, 
-           unnest(shortwave_radiation)                AS shortwave_radiation,
-           unnest(temperature_2m)                     AS temperature_2m,
-           unnest(cloud_cover)                        AS cloud_cover,
-           unnest(cloud_cover_low)                    AS cloud_cover_low,
-           unnest(cloud_cover_mid)                    AS cloud_cover_mid,
-           unnest(cloud_cover_high)                   AS cloud_cover_high,
-           unnest(weather_code)                       AS weather_code,
-           unnest(precipitation)                      AS precipitation,
-           unnest(rain)                               AS rain,
-           unnest(snowfall)                           AS snowfall
-    FROM (
-      SELECT unnest(hourly)
-      FROM read_json_auto(getEnv('open_meteo_url'))
-    )
-    ORDER BY measured_on
-    ON CONFLICT DO NOTHING
-  "
-  
+  # Run all imports
+  echo "Importing from $FROM to $TO"
+  duckdb "$DB" \
+    -c ".mode trash" \
+    -c "LOAD ICU" \
+    -c "SET TimeZone='Europe/Berlin'" \
+    -c "SET force_download=true" \
+    -c "$CREATE_SECRET_QUERY" \
+    -c "$IMPORT_QUERY" \
+    -c "$IMPORT_WEATHER_DATA_QUERY"
+
   CHANGED=true
 done
 
