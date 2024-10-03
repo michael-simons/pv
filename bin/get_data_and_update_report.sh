@@ -30,9 +30,8 @@ jq --raw-output .oauth.accessToken
 )
 rm -rf .tmp
   
-# And create a secret
-# Note to Hannes or anyone from DuckDB: It would be nice if the map expression would 
-# support expressions here, too :)
+# And create a secret, the map expression here doesn't support nested expressions, 
+# hence using the env variable directly.
 CREATE_SECRET_QUERY="
   CREATE OR REPLACE SECRET energymanager (
       TYPE HTTP,
