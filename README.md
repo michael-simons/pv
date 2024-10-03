@@ -16,17 +16,13 @@ mvn -f logger/pom.xml clean package
 
 ### For the database
 
-[DuckDB](https://duckdb.org) >= 0.8.0.
+[DuckDB](https://duckdb.org) >= 1.0.0.
 
-The schema is kind of separated in non-repeatable migrations and repeatable migrations. 
-In reality, the non-repeatable ones are idempotent, too, at least at the moment. 
-All schema scripts starts with an uppercase `V` followed by an incrementing number contain tables and the like.
-All statistics work with views. Those are named with an uppercase `R` to indicate that the contained statements are always repeatable:
-
-The schema can be applied as follows:
+The schema is split into base tables, shared views and eventually, the API, consisting of several views.
+It can be applied as follows:
 
 ```bash
-./bin/migrate.sh pv.db
+./bin/create_or_update_database.sh pv.db
 ```
 
 Measurements are stored per quarterly hour, as local date times (local timezone is assumed). 

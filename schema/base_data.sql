@@ -1,11 +1,8 @@
-CREATE TABLE IF NOT EXISTS co2_factor_per_year (
-    year        INTEGER PRIMARY KEY,
-    value       INTEGER NOT NULL -- in g/kWh
-);
+-- noinspection SqlResolveForFile
 
-DELETE FROM co2_factor_per_year;
-
+--
 -- Source for Germany: https://www.umweltbundesamt.de/themen/co2-emissionen-pro-kilowattstunde-strom-stiegen-in
+--
 INSERT INTO co2_factor_per_year (year, value) VALUES
   (1990, 764),
   (1991, 764),
@@ -40,4 +37,20 @@ INSERT INTO co2_factor_per_year (year, value) VALUES
   (2020, 369),
   (2021, 410),
   (2022, 434)
+  ON CONFLICT DO NOTHING;
+
+--
+-- VAT in Germany since 1968
+--
+INSERT INTO applicable_vat_values(valid_from,valid_until, value) VALUES
+  ('1968-01-01', '1968-06-30', 0.1) ,
+  ('1968-07-01', '1977-12-31', 0.11),
+  ('1978-01-01', '1979-06-30', 0.12),
+  ('1979-07-01', '1983-06-30', 0.13),
+  ('1983-07-01', '1992-12-31', 0.14),
+  ('1993-01-01', '1998-03-31', 0.15),
+  ('1998-04-01', '2006-12-31', 0.16),
+  ('2007-01-01', '2020-06-30', 0.19),
+  ('2020-07-01', '2020-12-31', 0.16),
+  ('2021-01-01', null,         0.19)
   ON CONFLICT DO NOTHING;
