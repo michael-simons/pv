@@ -36,10 +36,9 @@ CREATE_SECRET_QUERY="
   CREATE OR REPLACE SECRET energymanager (
       TYPE HTTP,
       EXTRA_HTTP_HEADERS MAP {
-          'Referer': 'https://new.energymanager.com/',
           'Authorization': 'Bearer $BEARER',
-          'Host': 'hems.kiwigrid.com',
-          'Origin': 'https://new.energymanager.com'
+          'Origin': 'https://new.energymanager.com',
+          'Referer': 'https://new.energymanager.com/'
       },
       SCOPE 'https://hems.kiwigrid.com'
   )
@@ -61,7 +60,32 @@ RANGES_QUERY="
   SELECT * FROM intervals
 "
 
+#
 # The actual import and data processing
+#
+# The JSON being processed looks like this
+# 
+# {
+#     "timeseries": [
+#         {
+#             "name": "PowerConsumed",
+#             "aggregated": 9443,
+#             "guid": "REDACTED",
+#             "id": "REDACTED~PowerConsumed",
+#             "unit": "WATT",
+#             "values": {
+#                 "2024-09-30T13:55+02:00": 354
+#             }
+#         },
+#     ],
+#     "resolution": "PT5M",
+#     "time_zone": "Europe/Berlin"
+# }
+#
+# A list of timeseries, with nested list of values, represented as maps, so they
+# must be unnested twice, and once recursive, and than pivoted to use the various
+# serieses as columns.
+#
 IMPORT_QUERY="
   WITH timeseries(v) AS (
     SELECT unnest(timeseries) 
@@ -92,6 +116,8 @@ IMPORT_QUERY="
       import = excluded.import
 "
 
+# Query for importing the weather data from Openmeteo, the API URL will be computed
+# dynamically, depending on how far back in the request is
 IMPORT_WEATHER_DATA_QUERY="
   INSERT INTO weather_data BY NAME
   SELECT strptime(unnest(time), '%Y-%m-%dT%H:%M')   AS measured_on,
