@@ -153,7 +153,7 @@ for i in $(duckdb $DB -readonly -noheader -csv -c "$RANGES_QUERY"); do
   TO="$(cut -d',' -f2 <<<"$i")"
   export TO
 
-  # The weather URL is dynamically computer with a bunch of columns
+  # The weather URL is dynamically computed with a bunch of columns
   open_meteo_url=$(duckdb "$DB" -c ".mode list" -c "
     SELECT CASE WHEN getenv('TO')::date <= today() - 3 THEN 'https://archive-api.open-meteo.com/v1/archive?'
                 ELSE 'https://api.open-meteo.com/v1/forecast?' END || base || '&start_date='|| getenv('FROM') || '&end_date=' || getenv('TO')
