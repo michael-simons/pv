@@ -96,7 +96,7 @@ IMPORT_QUERY="
   ),
   pivoted AS (pivot unnested ON name USING any_value(v)),
   input AS (
-    SELECT time_bucket(INTERVAL '15 Minutes', replace(ts, '+', ':00+')::timestamptz) AS _measured_on,
+    SELECT time_bucket(INTERVAL '15 Minutes', replace(ts, '+', ':00+')::timestamptz)::timestamp AS _measured_on,
            avg(PowerProduced) AS _production,
            avg(PowerConsumed) AS _consumption,
            avg(PowerOut)      AS _export,
