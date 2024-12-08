@@ -16,7 +16,7 @@ PASSWORD="$(< "$DIR"/../.secrets/password)"
 mkdir -p .tmp
 UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.4 Safari/605.1.15"
 BEARER=$(
-curl -A "$UA" -s "https://auth.energymanager.com/auth/realms/solarwatt/protocol/openid-connect/auth?response_type=code&client_id=energy-monitor-home&redirect_uri=https%3A%2F%2Fnew.energymanager.com%2Frest%2Fauth%2Fauth_grant&scope=openid" \
+curl -LA "$UA" -s "https://new.energymanager.com" \
   -H 'Accept:  text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' \
   --cookie-jar .tmp/cookies.txt |\
 xidel -se "//form[@id='kc-form-login']/@action" - |\
@@ -89,7 +89,7 @@ RANGES_QUERY="
 IMPORT_QUERY="
   WITH timeseries(v) AS (
     SELECT unnest(timeseries) 
-    FROM read_json('https://hems.kiwigrid.com/v2.52/analytics/overview?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
+    FROM read_json('https://hems.kiwigrid.com/v2.59/analytics/overview?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
   ), 
   unnested(name, ts, v) AS (
     SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
