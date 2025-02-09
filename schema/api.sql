@@ -66,14 +66,9 @@ CREATE OR REPLACE VIEW v_amortization AS (
     SELECT * FROM v$_selling_prices WHERE type = 'full_sell'
   ),
   per_month AS (
-      SELECT date_trunc('month', measured_on) AS month,
-             sum(production) / 4 / 1000  AS production,
-             sum(consumption) / 4 / 1000 AS consumption,
-             sum(export) / 4 / 1000      AS export,
-             sum(import) / 4 / 1000      AS import
-      FROM v$_beginning_of_measurements bom, measurements
-      WHERE date_trunc('day', measured_on) >= bom.value
-      GROUP BY month
+      SELECT *
+      FROM v$_beginning_of_measurements bom, v_energy_flow_per_month
+      WHERE month IS NOT NULL AND date_trunc('day', month) >= bom.value
   )
   SELECT per_month.month,
          round(-acquisition_cost.value + sum(full_sell.value * per_month.production) OVER ordered_months / 100.0, 2)
