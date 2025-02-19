@@ -52,7 +52,38 @@ CREATE OR REPLACE VIEW v_accumulated_yearly_energy_costs AS (
 
 
 --
--- The sad story of when the invest will have amortized
+-- Energy flow per day
+--
+CREATE OR REPLACE VIEW v_energy_flow_per_day AS (
+  SELECT date_trunc('day', measured_on)                  AS day,
+         round(sum(production)  / 4 / 1000, 2)           AS production,
+         round(sum(consumption) / 4 / 1000, 2)           AS consumption,
+         round(sum(import) / 4 / 1000, 2)                AS import,
+         round(sum(export)  / 4 / 1000, 2)               AS export,
+         round(sum(production - export )  / 4 / 1000, 2) AS internal_consumption
+  FROM measurements, v$_beginning_of_measurements bom
+  WHERE measured_on >= bom.value
+  GROUP BY day
+);
+
+
+--
+-- Same, but per month
+--
+CREATE OR REPLACE VIEW v_energy_flow_per_month AS (
+  SELECT date_trunc('month', measured_on)      AS month,
+         round(sum(production)  / 4 / 1000, 2) AS production,
+         round(sum(consumption) / 4 / 1000, 2) AS consumption,
+         round(sum(import) / 4 / 1000, 2)      AS import,
+         round(sum(export)  / 4 / 1000, 2)     AS export
+  FROM measurements
+  GROUP BY rollup(month)
+  ORDER BY month ASC NULLS LAST
+);
+
+
+--
+-- The sad story of when the investment will have amortized
 --
 CREATE OR REPLACE VIEW v_amortization AS (
   WITH acquisition_cost AS (
@@ -371,38 +402,7 @@ CREATE OR REPLACE VIEW v_current_buy AS (
 
 
 --
--- Energy flow per day
---
-CREATE OR REPLACE VIEW v_energy_flow_per_day AS (
-  SELECT date_trunc('day', measured_on)                  AS day,
-         round(sum(production)  / 4 / 1000, 2)           AS production,
-         round(sum(consumption) / 4 / 1000, 2)           AS consumption,
-         round(sum(import) / 4 / 1000, 2)                AS import,
-         round(sum(export)  / 4 / 1000, 2)               AS export,
-         round(sum(production - export )  / 4 / 1000, 2) AS internal_consumption
-  FROM measurements, v$_beginning_of_measurements bom
-  WHERE measured_on >= bom.value
-  GROUP BY day
-);
-
-
---
--- Same, but per month
---
-CREATE OR REPLACE VIEW v_energy_flow_per_month AS (
-  SELECT date_trunc('month', measured_on)      AS month,
-         round(sum(production)  / 4 / 1000, 2) AS production,
-         round(sum(consumption) / 4 / 1000, 2) AS consumption,
-         round(sum(import) / 4 / 1000, 2)      AS import,
-         round(sum(export)  / 4 / 1000, 2)     AS export
-  FROM measurements
-  GROUP BY rollup(month)
-  ORDER BY month ASC NULLS LAST
-);
-
-
---
--- Energy flow on the best day (day with highest production)
+-- Energy flow on the best day (day with the highest production)
 --
 CREATE OR REPLACE VIEW v_best_performing_days AS (
   WITH top_1 AS (
