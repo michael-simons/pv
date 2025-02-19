@@ -58,6 +58,10 @@ RANGES_QUERY="
     WHERE stop < today() - INTERVAL 1 day
   ) 
   SELECT * FROM intervals
+  UNION
+  SELECT cast(today() - INTERVAL 7 DAY AS date) AS start,
+         cast(today() - INTERVAL 1 DAY AS date) AS stop
+  FROM measurements having(count(*)) = 0
 "
 
 #
