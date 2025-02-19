@@ -104,14 +104,12 @@ IMPORT_QUERY="
            coalesce(avg(PowerProduced), 0) AS _production,
            coalesce(avg(PowerConsumed), 0) AS _consumption,
            coalesce(avg(PowerOut),0 )      AS _export,
-           coalesce(avg(PowerIn), 0)       AS _import,
-           coalesce(avg(PowerBuffered), 0) AS _buffered,
-           coalesce(avg(PowerReleased), 0) AS _released
+           coalesce(avg(PowerIn), 0)       AS _import
      FROM pivoted
      GROUP BY _measured_on
      ORDER BY _measured_on ASC
   )
-  INSERT INTO measurements (measured_on, production, consumption, export, import, buffered, released)
+  INSERT INTO measurements (measured_on, production, consumption, export, import)
   SELECT * FROM input
   ON CONFLICT (measured_on) DO UPDATE
   SET production = CASE
@@ -120,6 +118,32 @@ IMPORT_QUERY="
       consumption = excluded.consumption,
       export = excluded.export,
       import = excluded.import
+"
+
+IMPORT_QUERY_STORAGE="
+  WITH timeseries(v) AS (
+    SELECT unnest(timeseries)
+    FROM read_json('https://hems.kiwigrid.com/v2.59/analytics/storage?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
+  ),
+  unnested(name, ts, v) AS (
+    SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
+  ),
+  pivoted AS (pivot unnested ON name USING any_value(v)),
+  input AS (
+    SELECT time_bucket(INTERVAL '15 Minutes', replace(ts, '+', ':00+')::timestamptz)::timestamp AS _measured_on,
+           coalesce(avg(PowerBuffered), 0) AS _buffered,
+           coalesce(avg(PowerReleased), 0) AS _released,
+           coalesce(avg(StateOfCharge), 0) AS _state_of_charge
+     FROM pivoted
+     GROUP BY _measured_on
+     ORDER BY _measured_on ASC
+  )
+  INSERT INTO measurements (measured_on, buffered, released, state_of_charge)
+  SELECT * FROM input
+  ON CONFLICT (measured_on) DO UPDATE
+  SET buffered = coalesce(buffered, excluded.buffered),
+      released = coalesce(released, excluded.released),
+      state_of_charge = coalesce(state_of_charge, excluded.state_of_charge)
 "
 
 # Query for importing the weather data from Openmeteo, the API URL will be computed
@@ -176,6 +200,7 @@ for i in $(duckdb $DB -readonly -noheader -csv -c "$RANGES_QUERY"); do
     -c "SET force_download=true" \
     -c "$CREATE_SECRET_QUERY" \
     -c "$IMPORT_QUERY" \
+    -c "$IMPORT_QUERY_STORAGE" \
     -c "$IMPORT_WEATHER_DATA_QUERY"
 
   CHANGED=true

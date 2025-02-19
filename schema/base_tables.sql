@@ -3,26 +3,17 @@
 
 --
 -- The actual measurements, stored for every 15 minutes
--- The following dance is due to the fact that DuckDB at least at 1.2
--- cannot add columns with constraints, and I really want a not null
--- on all columns.
 --
 CREATE TABLE IF NOT EXISTS measurements (
   measured_on TIMESTAMP PRIMARY KEY,
-);
-CREATE TABLE measurements_backup AS SELECT * FROM measurements;
-DROP TABLE measurements;
-CREATE TABLE measurements (
-  measured_on TIMESTAMP PRIMARY KEY,
   production  DECIMAL(8,3) NOT NULL DEFAULT 0,
   consumption DECIMAL(8,3) NOT NULL DEFAULT 0,
-  import      DECIMAL(8,3) NOT NULL DEFAULT 0,
-  export      DECIMAL(8,3) NOT NULL DEFAULT 0,
-  buffered    DECIMAL(8,3) NOT NULL DEFAULT 0,
-  released    DECIMAL(8,3) NOT NULL DEFAULT 0
+  import DECIMAL(8,3)      NOT NULL DEFAULT 0,
+  export DECIMAL(8,3)      NOT NULL DEFAULT 0
 );
-INSERT INTO measurements BY NAME SELECT * FROM measurements_backup;
-DROP TABLE measurements_backup;
+ALTER TABLE measurements ADD COLUMN IF NOT EXISTS buffered DECIMAL(8,3);
+ALTER TABLE measurements ADD COLUMN IF NOT EXISTS released DECIMAL(8,3);
+ALTER TABLE measurements ADD COLUMN IF NOT EXISTS state_of_charge UTINYINT;
 
 --
 -- Stores some configuration and inventory data
