@@ -29,7 +29,7 @@ CREATE OR REPLACE VIEW v_accumulated_yearly_energy_costs AS (
       FROM range(time_bucket(INTERVAL '1 Year', today()), time_bucket(INTERVAL '1 Year', today()) + INTERVAL '1 Year', INTERVAL '1 Month')
   ),
   per_month AS (
-      SELECT date_trunc('month', ifnull(m.measured_on, months.value))       AS month,
+      SELECT date_trunc('month', ifnull(m.measured_on, months.value)) AS month,
              sum(coalesce(production,  0)) / 4 / 1000 AS production,
              sum(coalesce(consumption, 0)) / 4 / 1000 AS consumption,
              sum(coalesce(export,      0)) / 4 / 1000 AS export,
@@ -55,15 +55,24 @@ CREATE OR REPLACE VIEW v_accumulated_yearly_energy_costs AS (
 -- Energy flow per day
 --
 CREATE OR REPLACE VIEW v_energy_flow_per_day AS (
-  SELECT date_trunc('day', measured_on)                  AS day,
-         round(sum(production)  / 4 / 1000, 2)           AS production,
-         round(sum(consumption) / 4 / 1000, 2)           AS consumption,
-         round(sum(import) / 4 / 1000, 2)                AS import,
-         round(sum(export)  / 4 / 1000, 2)               AS export,
-         round(sum(production - export )  / 4 / 1000, 2) AS internal_consumption
-  FROM measurements, v$_beginning_of_measurements bom
-  WHERE measured_on >= bom.value
-  GROUP BY day
+  WITH days AS (
+    SELECT day:                  date_trunc('day', measured_on),
+           production:           round(sum(production) / 4 / 1000, 2),
+           consumption:          round(sum(consumption) / 4 / 1000, 2),
+           import:               round(sum(import) / 4 / 1000, 2),
+           export:               round(sum(export) / 4 / 1000, 2),
+           buffered:             round(sum(coalesce(buffered, 0)) / 4 / 1000, 2),
+           released:             round(sum(coalesce(released, 0)) / 4 / 1000, 2),
+           direct_consumption:   round(sum(greatest(production - export, 0) - coalesce(buffered, 0)) / 4 / 1000, 2),
+           internal_consumption: round(sum(greatest(production - export, 0)) / 4 / 1000, 2),
+    FROM measurements, v$_beginning_of_measurements bom
+    WHERE measured_on >= bom.value
+    GROUP BY day
+  )
+  SELECT *,
+         CASE WHEN coalesce(production, 0) = 0 THEN 0 ELSE least(round(internal_consumption / production * 100, 2), 100) END AS internal_consumption_share,
+         CASE WHEN coalesce(consumption, 0) = 0 THEN 0 ELSE least(round((internal_consumption + released) / (consumption + buffered) * 100, 2), 100) END AS autarchy
+  FROM days ORDER by day
 );
 
 
@@ -71,11 +80,13 @@ CREATE OR REPLACE VIEW v_energy_flow_per_day AS (
 -- Same, but per month
 --
 CREATE OR REPLACE VIEW v_energy_flow_per_month AS (
-  SELECT date_trunc('month', measured_on)      AS month,
-         round(sum(production)  / 4 / 1000, 2) AS production,
-         round(sum(consumption) / 4 / 1000, 2) AS consumption,
-         round(sum(import) / 4 / 1000, 2)      AS import,
-         round(sum(export)  / 4 / 1000, 2)     AS export
+  SELECT date_trunc('month', measured_on)                 AS month,
+         round(sum(production)  / 4 / 1000, 2)            AS production,
+         round(sum(consumption) / 4 / 1000, 2)            AS consumption,
+         round(sum(import) / 4 / 1000, 2)                 AS import,
+         round(sum(export)  / 4 / 1000, 2)                AS export,
+         round(sum(coalesce(buffered, 0)) / 4 / 1000, 2)  AS buffered,
+         round(sum(coalesce(released, 0))  / 4 / 1000, 2) AS released,
   FROM measurements
   GROUP BY rollup(month)
   ORDER BY month ASC NULLS LAST
@@ -150,17 +161,18 @@ CREATE OR REPLACE VIEW v_average_consumption_per_month_and_hour AS (
 CREATE OR REPLACE VIEW v_average_internal_consumption_share_per_hour AS (
   WITH hours as (SELECT range AS value FROM range(0, 24, 1)),
   totals AS (
-      SELECT date_part('hour', measured_on) AS hour,
-             avg(production)          AS production,
-             avg(consumption)         AS consumption,
-             avg(production - export) AS internal_consumption
+      SELECT hour:                 date_part('hour', measured_on),
+             production:           avg(production),
+             released:             avg(coalesce(released, 0)),
+             consumption:          avg(consumption + coalesce(buffered, 0)),
+             internal_consumption: avg(greatest(production - export, 0))
       FROM measurements, v$_beginning_of_measurements bom
       WHERE measured_on >= bom.value
       GROUP BY hour
   )
   SELECT hours.value AS hour,
-         CASE WHEN coalesce(production, 0)  = 0 THEN 0 ELSE round(internal_consumption / production * 100, 2)  END AS internal_consumption,
-         CASE WHEN coalesce(consumption, 0) = 0 THEN 0 ELSE round(internal_consumption / consumption * 100, 2) END AS autarchy
+         CASE WHEN coalesce(production, 0)  = 0 THEN 0 ELSE least(round(internal_consumption / production * 100, 2), 100)   END AS internal_consumption,
+         CASE WHEN coalesce(consumption, 0) = 0 THEN 0 ELSE least(round((internal_consumption + released) / consumption  * 100, 2), 100) END AS autarchy
   FROM hours left outer join totals on totals.hour = hours.value
   ORDER BY hours.value ASC
 );
@@ -171,17 +183,18 @@ CREATE OR REPLACE VIEW v_average_internal_consumption_share_per_hour AS (
 --
 CREATE OR REPLACE VIEW v_yearly_internal_consumption_share AS (
   WITH totals AS (
-      SELECT date_part('year', measured_on)      AS year,
-             sum(production) / 4 / 1000          AS production,
-             sum(consumption) / 4 / 1000         AS consumption,
-             sum(production - export) / 4 / 1000 AS internal_consumption
+      SELECT year:                 date_part('year', measured_on),
+             production:           sum(production) / 4 / 1000,
+             released:             sum(coalesce(released, 0)) / 4 / 1000,
+             consumption:          sum(consumption + coalesce(buffered, 0)) / 4 / 1000,
+             internal_consumption: sum(greatest(production - export, 0)) / 4 / 1000
       FROM measurements, v$_beginning_of_measurements bom
       WHERE measured_on >= bom.value
       GROUP BY year
   )
   SELECT year,
-         CASE WHEN production = 0  THEN 0 ELSE round(internal_consumption / production * 100, 2)  END AS internal_consumption,
-         CASE WHEN consumption = 0 THEN 0 ELSE round(internal_consumption / consumption * 100, 2) END AS autarchy
+         CASE WHEN production = 0  THEN 0 ELSE least(round(internal_consumption / production * 100, 2), 100)  END AS internal_consumption,
+         CASE WHEN consumption = 0 THEN 0 ELSE least(round((internal_consumption + released) / consumption * 100, 2), 100) END AS autarchy
   FROM totals
 );
 
@@ -191,14 +204,15 @@ CREATE OR REPLACE VIEW v_yearly_internal_consumption_share AS (
 --
 CREATE OR REPLACE VIEW v_overall_internal_consumption_share AS (
     WITH totals AS (
-        SELECT sum(production) / 4 / 1000          AS production,
-               sum(consumption) / 4 / 1000         AS consumption,
-               sum(production - export) / 4 / 1000 AS internal_consumption
+        SELECT production:           sum(production) / 4 / 1000,
+               released:             sum(coalesce(released, 0)) / 4 / 1000,
+               consumption:          sum(consumption + coalesce(buffered, 0)) / 4 / 1000,
+               internal_consumption: sum(greatest(production - export, 0)) / 4 / 1000
         FROM measurements, v$_beginning_of_measurements bom
         WHERE measured_on >= bom.value
     )
-    SELECT CASE WHEN production = 0  THEN 0 ELSE coalesce(round(internal_consumption / production  * 100, 2), 0) END AS internal_consumption,
-           CASE WHEN consumption = 0 THEN 0 ELSE coalesce(round(internal_consumption / consumption * 100, 2), 0) END AS autarchy
+    SELECT CASE WHEN production = 0  THEN 0 ELSE least(coalesce(round(internal_consumption / production  * 100, 2), 0), 100) END AS internal_consumption,
+           CASE WHEN consumption = 0 THEN 0 ELSE least(coalesce(round((internal_consumption + released) / consumption * 100, 2), 0), 100) END AS autarchy
     FROM totals
 );
 
