@@ -101,15 +101,17 @@ IMPORT_QUERY="
   pivoted AS (pivot unnested ON name USING any_value(v)),
   input AS (
     SELECT time_bucket(INTERVAL '15 Minutes', replace(ts, '+', ':00+')::timestamptz)::timestamp AS _measured_on,
-           avg(PowerProduced) AS _production,
-           avg(PowerConsumed) AS _consumption,
-           avg(PowerOut)      AS _export,
-           avg(PowerIn)       AS _import
+           coalesce(avg(PowerProduced), 0) AS _production,
+           coalesce(avg(PowerConsumed), 0) AS _consumption,
+           coalesce(avg(PowerOut),0 )      AS _export,
+           coalesce(avg(PowerIn), 0)       AS _import,
+           coalesce(avg(PowerBuffered), 0) AS _buffered,
+           coalesce(avg(PowerReleased), 0) AS _released
      FROM pivoted
      GROUP BY _measured_on
      ORDER BY _measured_on ASC
   )
-  INSERT INTO measurements (measured_on, production, consumption, export, import)
+  INSERT INTO measurements (measured_on, production, consumption, export, import, buffered, released)
   SELECT * FROM input
   ON CONFLICT (measured_on) DO UPDATE
   SET production = CASE
