@@ -216,5 +216,14 @@ else
     -c "SELECT max(measured_on)::date AS 'Last measurement now  ' FROM measurements"
 
   duckdb "$DB" -c "FROM v_monthly_number_of_measurements";
+
+  # Setup the python environment if not available
+  if [ ! -d "$DIR"/../notebooks/.venv/ ] ; then
+    python3 -m venv "$DIR"/../notebooks/.venv/
+    (source "$DIR"/../notebooks/.venv/bin/activate && pip3 install -r "$DIR"/../notebooks/requirements.txt)
+  fi
+
+  cp "$DB" __pv_db.duckdb__
   (source "$DIR"/../notebooks/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp index.html "$TARGET" && rm index.html)
+  rm __pv_db.duckdb__
 fi
