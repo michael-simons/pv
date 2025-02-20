@@ -204,7 +204,7 @@ for i in $(duckdb $DB -readonly -noheader -csv -c "$RANGES_QUERY"); do
     SELECT CASE WHEN getenv('TO')::date <= today() - 3 THEN 'https://archive-api.open-meteo.com/v1/archive?'
                 ELSE 'https://api.open-meteo.com/v1/forecast?' END || base || '&start_date='|| getenv('FROM') || '&end_date=' || getenv('TO')
     FROM v_weather_data_source
-  " | tail -n1)
+  " | tail -n+2)
   export open_meteo_url
 
   # Run all imports
