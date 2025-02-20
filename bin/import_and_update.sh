@@ -146,9 +146,25 @@ IMPORT_QUERY_STORAGE="
       state_of_charge = coalesce(state_of_charge, excluded.state_of_charge)
 "
 
+IMPORT_QUERY_BATTERY_HEALTH=$(duckdb "$DB" -c ".mode list" -c "
+SELECT 'WITH src AS (' ||
+         list_reduce(
+           list_transform(range(0, np.value::integer), i -> 'SELECT id, pk from read_json(''http://' || ip.value || '/pack?p=' || i || ''')'),
+           (v1, v2) -> v1 || ' UNION ' || v2) ||
+       ')
+        INSERT INTO battery_health BY NAME
+        SELECT today() AS ref_date, id.sn AS serial, list({serial: pk.sn, soh: pk.soh, op: pk.op}) AS packs
+        FROM src
+        GROUP BY serial
+        ON CONFLICT DO UPDATE SET packs = excluded.packs'  AS stmt
+FROM domain_values np, domain_values ip
+WHERE np.name = 'BATTERY_NUM_PACKS'
+  AND ip.name = 'BATTERY_IP'
+" | tail -n+2)
+
 # Query for importing the weather data from Openmeteo, the API URL will be computed
 # dynamically, depending on how far back in the request is
-IMPORT_WEATHER_DATA_QUERY="
+IMPORT_QUERY_WEATHER_DATA="
   INSERT INTO weather_data BY NAME
   SELECT strptime(unnest(time), '%Y-%m-%dT%H:%M')   AS measured_on,
          unnest(shortwave_radiation)                AS shortwave_radiation,
@@ -201,7 +217,8 @@ for i in $(duckdb $DB -readonly -noheader -csv -c "$RANGES_QUERY"); do
     -c "$CREATE_SECRET_QUERY" \
     -c "$IMPORT_QUERY" \
     -c "$IMPORT_QUERY_STORAGE" \
-    -c "$IMPORT_WEATHER_DATA_QUERY"
+    -c "$IMPORT_QUERY_BATTERY_HEALTH" \
+    -c "$IMPORT_QUERY_WEATHER_DATA"
 
   CHANGED=true
 done

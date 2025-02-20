@@ -15,6 +15,7 @@ ALTER TABLE measurements ADD COLUMN IF NOT EXISTS buffered DECIMAL(8,3);
 ALTER TABLE measurements ADD COLUMN IF NOT EXISTS released DECIMAL(8,3);
 ALTER TABLE measurements ADD COLUMN IF NOT EXISTS state_of_charge UTINYINT;
 
+
 --
 -- Stores some configuration and inventory data
 --
@@ -108,4 +109,16 @@ CREATE TABLE IF NOT EXISTS daily_weather_data (
   temperature_2m_max  DECIMAL(8,3) NOT NULL, -- in °C
   temperature_2m_min  DECIMAL(8,3) NOT NULL, -- in °C
   weather_code        USMALLINT NOT NULL
+);
+
+
+--
+-- Battery health
+--
+CREATE TABLE IF NOT EXISTS battery_health (
+    ref_date          DATE,
+    serial            VARCHAR(16),
+    -- soh (State of health) in percent, op (Operating time) in seconds
+    packs             STRUCT(serial VARCHAR(16), soh DECIMAL(4,2), op UINTEGER)[],
+    PRIMARY KEY (ref_date, serial)
 );

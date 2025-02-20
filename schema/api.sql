@@ -495,3 +495,19 @@ CREATE OR REPLACE VIEW v_monthly_weather AS (
   GROUP BY month
   ORDER BY month
 );
+
+
+--
+-- Battery health
+--
+CREATE OR REPLACE VIEW v_battery_health AS (
+  WITH pack_health AS (
+    SELECT year(ref_date) AS year,
+           unnest(packs).soh AS soh
+    FROM battery_health
+  )
+   SELECT year, round(avg(soh)) health, health/100 * any_value(value::double) AS capacity
+   FROM pack_health, domain_values
+   WHERE name = 'BATTERY_CAPACITY'
+   GROUP BY ALL
+);
