@@ -240,7 +240,7 @@ else
     (source "$DIR"/../notebooks/.venv/bin/activate && pip3 install -r "$DIR"/../notebooks/requirements.txt)
   fi
 
-  cp "$DB" __pv_db.duckdb__
+  ln -s "$DB" __pv_db.duckdb__
   (source "$DIR"/../notebooks/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp index.html "$TARGET" && rm index.html)
   rm __pv_db.duckdb__
 fi
