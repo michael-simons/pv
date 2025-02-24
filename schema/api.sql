@@ -523,3 +523,23 @@ CREATE OR REPLACE view v_battery_soc AS (
     AND measured_on BETWEEN today() - INTERVAL 1 year AND today()
   ORDER BY measured_on
 );
+
+
+--
+-- A pivot table for average balance of export/import per month and hour
+--
+CREATE OR REPLACE VIEW v_average_balance_per_month_and_hour AS (
+  WITH production_per_month_and_hour AS (
+      SELECT any_value(date_part('month', measured_on))AS month,
+             any_value(date_part('hour', measured_on)) AS hour,
+             avg(export-import) / 1000                 AS production
+        FROM measurements
+       GROUP BY date_trunc('hour', measured_on)
+       ORDER BY hour
+  )
+  PIVOT production_per_month_and_hour
+  ON month IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+  USING avg(production)
+  GROUP BY hour
+  ORDER BY hour
+);
