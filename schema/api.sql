@@ -511,3 +511,15 @@ CREATE OR REPLACE VIEW v_battery_health AS (
    WHERE name = 'BATTERY_CAPACITY'
    GROUP BY ALL
 );
+
+
+--
+-- Charge over the last 12 months
+--
+CREATE OR REPLACE view v_battery_soc AS (
+  SELECT measured_on, state_of_charge
+  FROM measurements
+  WHERE state_of_charge IS NOT NULL 
+    AND measured_on BETWEEN today() - INTERVAL 1 year AND today()
+  ORDER BY measured_on
+);
