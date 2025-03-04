@@ -543,3 +543,35 @@ CREATE OR REPLACE VIEW v_average_balance_per_month_and_hour AS (
   GROUP BY hour
   ORDER BY hour
 );
+
+
+--
+-- Official measurements augmented with my own, for current period and export
+--
+CREATE OR REPLACE VIEW v_yearly_settlements AS (
+  WITH om AS (
+    SELECT * REPLACE(
+             least(make_date(year(period_start) - CASE WHEN month(period_start) < 9 THEN 1 ELSE 0 END, 9, 1), date_trunc('month', period_start)) AS period_start,
+             CAST(date_trunc('month', period_end) - INTERVAL 1 day AS date) AS period_end
+           )
+      FROM official_measurements
+  ), mm AS (
+      SELECT make_date(year(measured_on) - CASE WHEN month(measured_on) < 9 THEN 1 ELSE 0 END, 9, 1) AS period_start,
+             make_date(year(measured_on) + CASE WHEN month(measured_on) >= 9 THEN 1 ELSE 0 END, 8, 31) AS period_end,
+             round(sum(import)/4/1000) AS import,
+             round(sum(export)/4/1000) AS export
+      FROM measurements
+      GROUP BY ALL
+  ), unified_import_export AS (
+    SELECT period_start, period_end,
+           coalesce(om.import, mm.import) AS import,
+           coalesce(om.export, mm.export) AS export
+    FROM om FULL OUTER JOIN mm USING(period_start, period_end), domain_values v
+    WHERE v.name = 'FIRST_PROPER_READINGS_ON'
+      AND year(period_end) NOT IN(2010, year(v.value::DATE)) -- 2010 is bonkers, and so is the year of the PV installation
+  )
+  SELECT year(period_end) AS year, import, export, net
+  FROM unified_import_export ASOF
+  LEFT JOIN v$_buying_prices ON period_start >= valid_from
+  ORDER BY period_start
+);
