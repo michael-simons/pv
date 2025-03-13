@@ -506,21 +506,34 @@ CREATE OR REPLACE VIEW v_battery_health AS (
            unnest(packs).soh AS soh
     FROM battery_health
   )
-   SELECT year, round(avg(soh)) health, health/100 * any_value(value::double) AS capacity
-   FROM pack_health, domain_values
-   WHERE name = 'BATTERY_CAPACITY'
-   GROUP BY ALL
+  SELECT year, round(avg(soh)) health, health/100 * any_value(value::double) AS capacity
+  FROM pack_health, domain_values
+  WHERE name = 'BATTERY_CAPACITY'
+  GROUP BY ALL
 );
 
 
 --
 -- Charge over the last 12 months
 --
-CREATE OR REPLACE view v_battery_soc AS (
-  SELECT measured_on, state_of_charge
-  FROM measurements
-  WHERE state_of_charge IS NOT NULL 
+CREATE OR REPLACE VIEW v_battery_soc AS (
+  WITH packs AS (
+    SELECT ref_date,
+           unnest(packs).soh AS soh
+    FROM battery_health
+  ), pack_health AS (
+    SELECT ref_date, avg(soh) AS soh
+    FROM packs,
+    GROUP BY ALL
+  )
+  SELECT measured_on,
+         state_of_charge,
+         capacity: round(soh/100 * value::double, 1),
+         charge:   round(state_of_charge/100 * capacity,1)
+  FROM measurements ASOF JOIN pack_health ON ref_date >= measured_on, domain_values
+  WHERE state_of_charge IS NOT NULL
     AND measured_on BETWEEN today() - INTERVAL 1 year AND today()
+    AND name = 'BATTERY_CAPACITY'
   ORDER BY measured_on
 );
 
@@ -576,7 +589,7 @@ CREATE OR REPLACE VIEW v_yearly_settlements AS (
       AND year(period_end) NOT IN(2010, year(v.value::DATE)) -- 2010 is bonkers, and so is the year of the PV installation
   )
   SELECT year(period_end) AS year, import, export, net
-  FROM unified_import_export ASOF
-  LEFT JOIN v$_buying_prices ON period_start >= valid_from
+  FROM unified_import_export
+  ASOF LEFT JOIN v$_buying_prices ON period_start >= valid_from
   ORDER BY period_start
 );
