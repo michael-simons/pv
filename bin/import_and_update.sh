@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# This script creates intervals of 7 days (the longest interval I can get from the 
+# This script creates intervals of 7 days (the longest interval I can get from the
 # vendor of my monitoring system) and runs the import multiple times if necessary.
 
 set -euo pipefail
 export LC_ALL=en_US.UTF-8
 
 DIR="$(dirname "$(realpath "$0")")"
-DB="$(pwd)/$1"
+DB="$(realpath "$1")"
 TARGET="$(< "$DIR"/../.secrets/target)"
 USERNAME="$(< "$DIR"/../.secrets/username)"
 PASSWORD="$(< "$DIR"/../.secrets/password)"
@@ -29,8 +29,8 @@ curl -A "$UA" -s https://new.energymanager.com/context \
 jq --raw-output .oauth.accessToken
 )
 rm -rf .tmp
-  
-# And create a secret, the map expression here doesn't support nested expressions, 
+
+# And create a secret, the map expression here doesn't support nested expressions,
 # hence using the env variable directly.
 CREATE_SECRET_QUERY="
   CREATE OR REPLACE SECRET energymanager (
@@ -47,16 +47,16 @@ CREATE_SECRET_QUERY="
 # Query that computes ranges of 7 days max from the last full measurement
 RANGES_QUERY="
   WITH RECURSIVE intervals(start, stop) AS (
-    SELECT cast(max(measured_on) + INTERVAL 1 DAY AS date) AS start, 
+    SELECT cast(max(measured_on) + INTERVAL 1 DAY AS date) AS start,
            cast(least(start + INTERVAL 6 DAYS, today() - INTERVAL 1 DAY) AS date) AS stop
     FROM measurements
     HAVING start < today()
     UNION ALL
-    SELECT cast(p.stop + INTERVAL 1 DAY AS date) AS next_start, 
+    SELECT cast(p.stop + INTERVAL 1 DAY AS date) AS next_start,
            cast(least(next_start + INTERVAL 6 DAY, today() - INTERVAL 1 DAY) AS date) AS next_stop
     FROM intervals p
     WHERE stop < today() - INTERVAL 1 day
-  ) 
+  )
   SELECT * FROM intervals
   UNION
   SELECT cast(today() - INTERVAL 7 DAY AS date) AS start,
@@ -68,7 +68,7 @@ RANGES_QUERY="
 # The actual import and data processing
 #
 # The JSON being processed looks like this
-# 
+#
 # {
 #     "timeseries": [
 #         {
@@ -92,9 +92,9 @@ RANGES_QUERY="
 #
 IMPORT_QUERY="
   WITH timeseries(v) AS (
-    SELECT unnest(timeseries) 
+    SELECT unnest(timeseries)
     FROM read_json('https://hems.kiwigrid.com/v2.59/analytics/overview?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
-  ), 
+  ),
   unnested(name, ts, v) AS (
     SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
   ),
@@ -234,13 +234,14 @@ else
 
   duckdb "$DB" -c "FROM v_monthly_number_of_measurements";
 
+  NOTEBOOKS="$DIR"/../notebooks
   # Setup the python environment if not available
-  if [ ! -d "$DIR"/../notebooks/.venv/ ] ; then
-    python3 -m venv "$DIR"/../notebooks/.venv/
-    (source "$DIR"/../notebooks/.venv/bin/activate && pip3 install -r "$DIR"/../notebooks/requirements.txt)
+  if [ ! -d "$NOTEBOOKS"/.venv/ ] ; then
+    python3 -m venv "$NOTEBOOKS"/.venv/
+    (source "$NOTEBOOKS"/.venv/bin/activate && pip3 install -r "$NOTEBOOKS"/requirements.txt)
   fi
 
-  ln -s "$DB" __pv_db.duckdb__
-  (source "$DIR"/../notebooks/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp index.html "$TARGET" && rm index.html)
-  rm __pv_db.duckdb__
+  ln -s "$DB" "$NOTEBOOKS"/__pv_db.duckdb__
+  (source "$NOTEBOOKS"/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input "$NOTEBOOKS"/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp "$NOTEBOOKS"/index.html "$TARGET" && rm "$NOTEBOOKS"/index.html)
+  rm "$NOTEBOOKS"/__pv_db.duckdb__
 fi
