@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<!--
+	| Copy to ~/Library/LaunchAgents, load and start via
+	| launchctl load ~/Library/LaunchAgents/daily_pv_update.plist
+	|
+	| All paths must be made absolute!
+	-->
+	<dict>
+		<key>Label</key>
+		<string>local.msimons.daily_pv_update</string>
+		<key>Program</key>
+		<string>/bin/bash</string>
+		<key>ProgramArguments</key>
+		<array>
+			<!-- Running it through bash makes it an interactive shell, which is what I want -->
+			<string>/bin/bash</string>
+			<string>/path/to/pv/bin/daily_pv_update.sh</string>
+		</array>
+		<key>WorkingDirectory</key>
+		<string>/var/tmp</string>
+		<key>StartCalendarInterval</key>
+		<array>
+			<dict>
+				<key>Hour</key>
+				<integer>6</integer>
+				<key>Minute</key>
+				<integer>0</integer>
+			</dict>
+		</array>
+		<key>StandardErrorPath</key>
+		<string>/path/to/pv_data/logs/stderr.log</string>
+		<key>StandardOutPath</key>
+		<string>/path/to/pv_data/logs/stdout.log</string>
+	</dict>
+</plist>
