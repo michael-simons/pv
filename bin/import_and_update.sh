@@ -241,7 +241,8 @@ else
     (source "$NOTEBOOKS"/.venv/bin/activate && pip3 install -r "$NOTEBOOKS"/requirements.txt)
   fi
 
+  IFS=$'\r\n' GLOBIGNORE='*' command eval 'SCP_OPTIONS=($(cat "$DIR"/../.secrets/scp_options))'
   ln -s "$DB" "$NOTEBOOKS"/__pv_db.duckdb__
-  (source "$NOTEBOOKS"/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input "$NOTEBOOKS"/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp "$NOTEBOOKS"/index.html "$TARGET" && rm "$NOTEBOOKS"/index.html)
+  (source "$NOTEBOOKS"/.venv/bin/activate && jupyter nbconvert --execute --to html --output index.html --no-input "$NOTEBOOKS"/Photovoltaik\ \|\ Familie\ Simons,\ Aachen.ipynb && scp "${SCP_OPTIONS[@]}" "$NOTEBOOKS"/index.html "$TARGET" && rm "$NOTEBOOKS"/index.html)
   rm "$NOTEBOOKS"/__pv_db.duckdb__
 fi
