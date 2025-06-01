@@ -149,8 +149,8 @@ IMPORT_QUERY_STORAGE="
 IMPORT_QUERY_BATTERY_HEALTH=$(duckdb "$DB" -c ".mode list" -c "
 SELECT 'WITH src AS (' ||
          list_reduce(
-           list_transform(range(0, np.value::integer), i -> 'SELECT id, pk from read_json(''http://' || ip.value || '/pack?p=' || i || ''')'),
-           (v1, v2) -> v1 || ' UNION ' || v2) ||
+           list_transform(range(0, np.value::integer), lambda i: 'SELECT id, pk from read_json(''http://' || ip.value || '/pack?p=' || i || ''')'),
+           lambda v1, v2: v1 || ' UNION ' || v2) ||
        ')
         INSERT INTO battery_health BY NAME
         SELECT today() AS ref_date, id.sn AS serial, list({serial: pk.sn, soh: pk.soh, op: pk.op}) AS packs
