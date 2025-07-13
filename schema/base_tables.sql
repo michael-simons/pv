@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS domain_values (
 
 --
 -- Applicable VAT
--- 
+--
 CREATE TABLE IF NOT EXISTS applicable_vat_values (
   valid_from  DATE NOT NULL PRIMARY KEY,
   valid_until DATE,
@@ -69,14 +69,14 @@ CREATE TABLE IF NOT EXISTS official_measurements (
 
 --
 -- Factor how much CO2 in g/kWh in Germanys energy mix
--- 
+--
 CREATE TABLE IF NOT EXISTS co2_factor_per_year (
   year        INTEGER PRIMARY KEY,
   value       INTEGER NOT NULL -- in g/kWh
 );
 
 
--- 
+--
 -- Measurements / forecast of weather from Open Meteo
 -- See https://open-meteo.com/en/docs/
 --
@@ -84,9 +84,9 @@ CREATE TABLE IF NOT EXISTS weather_data (
   measured_on         TIMESTAMP PRIMARY KEY,
   shortwave_radiation DECIMAL(8,3) NOT NULL, -- in W/m^
   temperature_2m      DECIMAL(8,3) NOT NULL, -- in °C
-  cloud_cover         DECIMAL(8,3) NOT NULL, -- in % 
-  cloud_cover_low     DECIMAL(8,3) NOT NULL, -- in % 
-  cloud_cover_mid     DECIMAL(8,3) NOT NULL, -- in % 
+  cloud_cover         DECIMAL(8,3) NOT NULL, -- in %
+  cloud_cover_low     DECIMAL(8,3) NOT NULL, -- in %
+  cloud_cover_mid     DECIMAL(8,3) NOT NULL, -- in %
   cloud_cover_high    DECIMAL(8,3) NOT NULL, -- in %
   weather_code        USMALLINT NOT NULL,
   precipitation       DECIMAL(8,3) NOT NULL, -- in mm
@@ -121,4 +121,25 @@ CREATE TABLE IF NOT EXISTS battery_health (
     -- soh (State of health) in percent, op (Operating time) in seconds
     packs             STRUCT(serial VARCHAR(16), soh DECIMAL(4,2), op UINTEGER)[],
     PRIMARY KEY (ref_date, serial)
+);
+
+
+--
+-- Other utilities
+--
+CREATE TABLE IF NOT EXISTS other_utilities (
+  year        USMALLINT NOT NULL,
+  type        VARCHAR(32) NOT NULL CHECK (type in ('electricity', 'water', 'gas')),
+  consumption DECIMAL(8,3) NOT NULL,
+  PRIMARY KEY (year, type)
+);
+
+
+--
+-- Gas parameters
+--
+CREATE TABLE IF NOT EXISTS gas_parameters (
+  year        USMALLINT PRIMARY KEY,
+  ab_wert     DECIMAL(6,4) NOT NULL,
+  z_zahl      DECIMAL(5,4) NOT NULL
 );

@@ -576,20 +576,48 @@ CREATE OR REPLACE VIEW v_yearly_settlements AS (
   ), mm AS (
       SELECT make_date(year(measured_on) - CASE WHEN month(measured_on) < 9 THEN 1 ELSE 0 END, 9, 1) AS period_start,
              make_date(year(measured_on) + CASE WHEN month(measured_on) >= 9 THEN 1 ELSE 0 END, 8, 31) AS period_end,
-             round(sum(import)/4/1000) AS import,
-             round(sum(export)/4/1000) AS export
+             round(sum(import)/4/1000)      AS import,
+             round(sum(export)/4/1000)      AS export,
+             round(sum(consumption)/4/1000) AS consumption
       FROM measurements
       GROUP BY ALL
   ), unified_import_export AS (
     SELECT period_start, period_end,
            coalesce(om.import, mm.import) AS import,
-           coalesce(om.export, mm.export) AS export
+           coalesce(om.export, mm.export) AS export,
+           coalesce(mm.consumption, om.import) AS consumption
     FROM om FULL OUTER JOIN mm USING(period_start, period_end), domain_values v
     WHERE v.name = 'FIRST_PROPER_READINGS_ON'
       AND year(period_end) NOT IN(2010, year(v.value::DATE)) -- 2010 is bonkers, and so is the year of the PV installation
   )
-  SELECT year(period_end) AS year, import, export, net
+  SELECT year(period_end) AS year, import, export, consumption, net
   FROM unified_import_export
   ASOF LEFT JOIN v$_buying_prices ON period_start >= valid_from
   ORDER BY period_start
+);
+
+
+--
+-- Yearly consumption
+--
+CREATE OR REPLACE VIEW v_yearly_consumption AS (
+  WITH src AS (
+    SELECT ou.year,
+           type,
+           CASE type
+             WHEN 'water' THEN round(ou.consumption)
+             WHEN 'gas' THEN round(ou.consumption * p.ab_Wert * p.z_zahl)
+           END AS consumption
+    FROM other_utilities ou  NATURAL JOIN gas_parameters p,
+         domain_values v
+    WHERE v.name = 'FIRST_PROPER_READINGS_ON'
+      AND year NOT IN(2010, year(v.value::DATE)) -- 2010 is bonkers, and so is the year of the PV installation
+    UNION
+    SELECT year,
+           'electricity' AS type,
+           consumption
+    FROM v_yearly_settlements
+  )
+  PIVOT src ON type IN ('electricity', 'gas', 'water')
+            USING first(consumption) ORDER BY year
 );
