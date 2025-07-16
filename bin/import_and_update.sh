@@ -93,7 +93,7 @@ RANGES_QUERY="
 IMPORT_QUERY="
   WITH timeseries(v) AS (
     SELECT unnest(timeseries)
-    FROM read_json('https://hems.kiwigrid.com/v2.59/analytics/overview?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
+    FROM read_json('https://hems.kiwigrid.com/v6/analytics/overview?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
   ),
   unnested(name, ts, v) AS (
     SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
@@ -123,7 +123,7 @@ IMPORT_QUERY="
 IMPORT_QUERY_STORAGE="
   WITH timeseries(v) AS (
     SELECT unnest(timeseries)
-    FROM read_json('https://hems.kiwigrid.com/v2.59/analytics/storage?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
+    FROM read_json('https://hems.kiwigrid.com/v6/analytics/storage?type=POWER&from=' || getenv('FROM') || 'T00:00:00&to=' || getenv('TO') || 'T23:59:59&resolution=PT5M')
   ),
   unnested(name, ts, v) AS (
     SELECT v['name'], unnest(map_entries(v['values']), recursive:=true) FROM timeseries
